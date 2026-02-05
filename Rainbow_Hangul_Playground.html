@@ -1,0 +1,358 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { Mic, Eraser, Volume2, Sparkles, Keyboard, X, Info, Music, Music2 } from 'lucide-react';
+
+const App = () => {
+  // --- Constants ---
+  const BGM_URL = "./suno_bgm.mp3";
+
+  // --- State Management ---
+  const [text, setText] = useState("무지개 한글 놀이터");
+  const [isListening, setIsListening] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [brushColor, setBrushColor] = useState('#000000'); 
+  const [isRainbowMode, setIsRainbowMode] = useState(false);
+  const [brushSize] = useState(12);
+  const [showInput, setShowInput] = useState(false);
+  const [inputText, setInputText] = useState("");
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [availableVoices, setAvailableVoices] = useState([]);
+  const [isBgmOn, setIsBgmOn] = useState(false);
+
+  // --- Refs ---
+  const canvasRef = useRef(null);
+  const containerRef = useRef(null);
+  const recognitionRef = useRef(null);
+  const audioRef = useRef(null);
+  const lastPos = useRef({ x: 0, y: 0 });
+
+  // 1. Initialization: Audio, Voice & STT
+  useEffect(() => {
+    // BGM Setup
+    const audio = new Audio(BGM_URL);
+    audio.loop = true;
+    audio.volume = 0.2; // 배경음악 볼륨 0.2
+    audio.preload = "auto";
+    audioRef.current = audio;
+
+    // Speech Recognition Setup (STT)
+    try {
+      if (typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition)) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognitionRef.current = new SpeechRecognition();
+        recognitionRef.current.continuous = false;
+        recognitionRef.current.lang = 'ko-KR';
+        recognitionRef.current.interimResults = false;
+
+        recognitionRef.current.onresult = (event) => {
+          const transcript = event.results[0][0].transcript;
+          setText(transcript.trim());
+          clearCanvas(); 
+          setIsListening(false);
+        };
+        recognitionRef.current.onend = () => setIsListening(false);
+        recognitionRef.current.onerror = () => setIsListening(false);
+      }
+    } catch (e) {
+      console.error("음성 인식 초기화 실패", e);
+    }
+
+    const loadVoices = () => {
+      if (typeof window !== 'undefined' && window.speechSynthesis) {
+        setAvailableVoices(window.speechSynthesis.getVoices());
+      }
+    };
+    loadVoices();
+    if (window.speechSynthesis) window.speechSynthesis.onvoiceschanged = loadVoices;
+
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
+
+  // BGM Toggle
+  const toggleBgm = () => {
+    if (!audioRef.current) return;
+    if (isBgmOn) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play().catch(e => console.log("BGM 재생 대기: ", e));
+    }
+    setIsBgmOn(!isBgmOn);
+  };
+
+  // 2. Canvas Management
+  const initCanvas = () => {
+    if (containerRef.current && canvasRef.current) {
+      const canvas = canvasRef.current;
+      const container = containerRef.current;
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = container.offsetWidth * dpr;
+      canvas.height = container.offsetHeight * dpr;
+      canvas.style.width = `${container.offsetWidth}px`;
+      canvas.style.height = `${container.offsetHeight}px`;
+      const ctx = canvas.getContext('2d');
+      ctx.scale(dpr, dpr);
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.lineWidth = brushSize;
+    }
+  };
+
+  useEffect(() => {
+    const timer = setTimeout(initCanvas, 300);
+    window.addEventListener('resize', initCanvas);
+    return () => window.removeEventListener('resize', initCanvas);
+  }, [text]);
+
+  // 3. TTS Logic
+  const speakText = () => {
+    if (!window.speechSynthesis || !text) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    let voices = window.speechSynthesis.getVoices();
+    if (voices.length === 0) voices = availableVoices;
+    const krVoice = voices.find(v => v.lang.includes('ko') || v.lang.includes('KR'));
+    if (krVoice) utterance.voice = krVoice;
+    utterance.lang = 'ko-KR';
+    utterance.rate = 0.8;
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    window.speechSynthesis.speak(utterance);
+    
+    // Play BGM on first interaction if toggled
+    if (isBgmOn && audioRef.current && audioRef.current.paused) {
+        audioRef.current.play();
+    }
+  };
+
+  // 4. Drawing Handlers
+  const getCoordinates = (e) => {
+    const canvas = canvasRef.current;
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return { x: clientX - rect.left, y: clientY - rect.top };
+  };
+
+  const startDrawing = (e) => {
+    const { x, y } = getCoordinates(e);
+    lastPos.current = { x, y };
+    setIsDrawing(true);
+  };
+
+  const draw = (e) => {
+    if (!isDrawing) return;
+    const { x, y } = getCoordinates(e);
+    const ctx = canvasRef.current.getContext('2d');
+    ctx.beginPath();
+    ctx.strokeStyle = isRainbowMode ? `hsl(${Date.now() / 5 % 360}, 75%, 60%)` : brushColor;
+    ctx.moveTo(lastPos.current.x, lastPos.current.y);
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    lastPos.current = { x, y };
+  };
+
+  const stopDrawing = () => setIsDrawing(false);
+
+  const clearCanvas = () => {
+    const ctx = canvasRef.current.getContext('2d');
+    ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+  };
+
+  // --- 개선된 글자 크기 로직 (이미지 참고 반영) ---
+  const getDynamicFontSize = () => {
+    const len = text.length || 1;
+    // 1-2자: 따라 쓰기 가장 좋게 최대 크기 확장
+    if (len <= 2) return 'clamp(8rem, 45vw, 20rem)'; 
+    // 3-5자: 캔버스 가로 비율에 맞춰 충분한 크기 유지
+    if (len <= 5) return 'clamp(5.5rem, 28vw, 13rem)';
+    // 6-10자: 캔버스 너비를 가득 채우면서도 쓰기 편한 크기
+    if (len <= 10) return 'clamp(4rem, 18vw, 9rem)';
+    // 11-20자: 줄바꿈이 일어나도 충분히 큰 크기 유지
+    if (len <= 20) return 'clamp(3rem, 12vw, 6rem)';
+    // 그 이상의 긴 문장: 캔버스 탈출 방지 및 최소 크기 보장
+    return 'clamp(2.2rem, 8vw, 4.5rem)';
+  };
+
+  const colors = ['#000000', '#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#a855f7', '#ec4899'];
+
+  return (
+    <div className="flex flex-col items-center w-full h-screen bg-amber-50 font-sans select-none overflow-hidden touch-none fixed inset-0">
+      <style>
+        {`
+          @import url('https://fonts.googleapis.com/css2?family=Jua&display=swap');
+          * { font-family: 'Jua', 'Noto Sans KR', sans-serif; }
+          .notebook-bg {
+            background-color: #ffffff;
+            background-image: 
+              linear-gradient(#e5e7eb 1px, transparent 1px),
+              linear-gradient(90deg, #e5e7eb 1px, transparent 1px);
+            background-size: 40px 40px;
+          }
+          .guide-text {
+            -webkit-text-stroke: 2px #e5e7eb; 
+            text-shadow: 2px 2px 0px #fff;
+            display: inline-block;
+            width: 100%;
+            max-width: 95%;
+            word-break: break-all;
+            line-height: 1.1; /* 줄 간격을 좁혀 따라 쓰기 밀집도 향상 */
+            text-align: center;
+            letter-spacing: -0.01em;
+          }
+          .rainbow-btn { background: linear-gradient(135deg, #ff0000, #ffff00, #0000ff); }
+          .no-scrollbar::-webkit-scrollbar { display: none; }
+          @keyframes spin-slow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+          .animate-spin-slow {
+            animation: spin-slow 8s linear infinite;
+          }
+        `}
+      </style>
+
+      {/* BGM Toggle Button (이미지 2 참고) */}
+      <button 
+        onClick={toggleBgm}
+        className={`fixed top-4 right-4 z-[60] flex items-center gap-2 px-3 py-2 rounded-full backdrop-blur-md shadow-lg transition-all active:scale-95 border border-white/20 ${isBgmOn ? 'bg-white/90 text-amber-600' : 'bg-gray-500/80 text-white'}`}
+      >
+        {isBgmOn ? <Music size={18} className="animate-spin-slow" /> : <Music2 size={18} />}
+        <span className="text-[11px] font-bold tracking-tighter">{isBgmOn ? 'BGM ON' : 'BGM OFF'}</span>
+      </button>
+
+      {/* Header */}
+      <div className="flex items-center gap-2 pt-4 pb-2">
+        <span className="text-2xl">🐣</span>
+        <h1 className="text-xl font-bold text-amber-600">무지개 한글놀이</h1>
+      </div>
+
+      {/* Tool Panel */}
+      <div className="w-full px-4 flex flex-col gap-2 mb-2">
+        <div className="grid grid-cols-4 gap-2 w-full max-w-4xl mx-auto">
+          <button onClick={() => { 
+              if(!recognitionRef.current) { setShowInput(true); return; }
+              if(isListening) recognitionRef.current.stop();
+              else {
+                  try { recognitionRef.current.start(); setIsListening(true); } 
+                  catch(e) { setShowInput(true); }
+              }
+            }} 
+            className={`py-3 rounded-2xl border-2 flex flex-col items-center justify-center shadow-sm transition-all active:scale-95 ${isListening ? 'bg-red-50 border-red-400 text-red-500 animate-pulse' : 'bg-white border-red-100 text-red-400'}`}>
+            <Mic size={24} />
+            <span className="text-[10px] sm:text-xs mt-1">말하기</span>
+          </button>
+          
+          <button onClick={() => setShowInput(true)} 
+            className="py-3 rounded-2xl border-2 bg-white border-purple-100 text-purple-400 flex flex-col items-center justify-center shadow-sm active:scale-95">
+            <Keyboard size={24} />
+            <span className="text-[10px] sm:text-xs mt-1">입력</span>
+          </button>
+          
+          <button onClick={speakText} disabled={isSpeaking}
+            className={`py-3 rounded-2xl border-2 flex flex-col items-center justify-center shadow-sm transition-all active:scale-95 ${isSpeaking ? 'bg-blue-50 border-blue-400 text-blue-500' : 'bg-white border-blue-100 text-blue-400'}`}>
+            <Volume2 size={24} className={isSpeaking ? 'animate-bounce' : ''} />
+            <span className="text-[10px] sm:text-xs mt-1">읽기</span>
+          </button>
+          
+          <button onClick={clearCanvas} 
+            className="py-3 rounded-2xl border-2 bg-white border-orange-100 text-orange-400 flex flex-col items-center justify-center shadow-sm active:scale-95">
+            <Eraser size={24} />
+            <span className="text-[10px] sm:text-xs mt-1">지우기</span>
+          </button>
+        </div>
+
+        {/* Color Palette */}
+        <div className="bg-white rounded-2xl border-2 border-amber-200 p-2 flex items-center justify-center shadow-sm max-w-4xl mx-auto w-full">
+          <div className="flex gap-2.5 sm:gap-4 overflow-x-auto no-scrollbar py-1">
+            {colors.map((c) => (
+              <button key={c} onClick={() => { setIsRainbowMode(false); setBrushColor(c); }}
+                className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 shrink-0 transition-transform ${!isRainbowMode && brushColor === c ? 'border-gray-800 scale-110 shadow-md' : 'border-transparent'}`}
+                style={{ backgroundColor: c }} />
+            ))}
+            <button onClick={() => setIsRainbowMode(true)}
+              className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 shrink-0 flex items-center justify-center rainbow-btn transition-transform ${isRainbowMode ? 'border-gray-800 scale-110 shadow-md' : 'border-transparent'}`}>
+              <Sparkles size={18} className="text-white" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Writing Area (이미지 참고: 가로로 꽉 차도록 설계) */}
+      <div className="flex-1 w-full px-4 pb-2 min-h-0">
+        <div className="w-full h-full bg-white rounded-3xl border-4 border-amber-200 overflow-hidden shadow-xl relative">
+          <div ref={containerRef} className="notebook-bg w-full h-full relative flex items-center justify-center p-4">
+            
+            <div className="absolute inset-0 flex items-center justify-center z-0 pointer-events-none p-4 overflow-hidden">
+               {/* 눈금 가이드 패턴 */}
+               <div className="absolute inset-0 opacity-10 pointer-events-none" 
+                 style={{ 
+                   backgroundImage: 'linear-gradient(to right, #000 1.5px, transparent 1.5px), linear-gradient(to bottom, #000 1.5px, transparent 1.5px)',
+                   backgroundSize: '100% 100%',
+                   backgroundPosition: 'center'
+                 }} 
+               />
+              <span className="guide-text" 
+                    style={{ 
+                      fontSize: getDynamicFontSize(), 
+                      color: 'transparent',
+                    }}>
+                {text}
+              </span>
+            </div>
+
+            <canvas
+              ref={canvasRef}
+              className="absolute top-0 left-0 w-full h-full z-10 cursor-crosshair"
+              style={{ touchAction: 'none' }} 
+              onMouseDown={startDrawing}
+              onMouseMove={draw}
+              onMouseUp={stopDrawing}
+              onMouseLeave={stopDrawing}
+              onTouchStart={startDrawing}
+              onTouchMove={draw}
+              onTouchEnd={stopDrawing}
+            />
+          </div>
+        </div>
+      </div>
+      
+      {/* Footer (이미지 2의 저작권 표시 적용) */}
+      <div className="flex flex-col items-center gap-1 py-3">
+        <div className="flex items-center gap-1.5 text-amber-500/80 bg-amber-100/50 px-4 py-1 rounded-full mb-1">
+          <Info size={12} />
+          <p className="text-[10px] font-medium">아이폰은 측면 진동 스위치를 꺼야 소리가 들려요!</p>
+        </div>
+        <p className="text-[10px] text-gray-400 font-medium tracking-tight">
+          <span className="text-gray-500 font-bold">Music by Suno</span> | Font: 배달의민족 주아, Noto Sans
+        </p>
+        <p className="text-[10px] text-gray-400 opacity-70">© 2026 kiado-k. All rights reserved.</p>
+      </div>
+
+      {/* Input Modal */}
+      {showInput && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-6" onClick={() => setShowInput(false)}>
+          <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-gray-800">단어 입력하기</h3>
+              <button onClick={() => setShowInput(false)} className="text-gray-400 hover:text-gray-600 transition-colors"><X size={24}/></button>
+            </div>
+            <form onSubmit={(e) => { e.preventDefault(); if(inputText.trim()){ setText(inputText); clearCanvas(); setShowInput(false); setInputText(""); } }}>
+              <input autoFocus type="text" value={inputText} onChange={(e) => setInputText(e.target.value)}
+                className="w-full border-b-4 border-amber-200 rounded-none p-3 text-2xl text-center mb-6 focus:outline-none focus:border-amber-400 transition-all"
+                placeholder="예: 안녕 친구야" />
+              <button type="submit" className="w-full bg-amber-400 hover:bg-amber-500 text-white rounded-2xl py-4 text-xl font-bold shadow-lg shadow-amber-200 active:scale-95 transition-all">
+                보여주기
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default App;
