@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>준5급 한자 놀이터 (최종 완성)</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f0fdf4;
+            user-select: none;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .font-jua {
+            font-family: 'Jua', sans-serif;
+        }
+        
+        .perspective-1000 { perspective: 1000px; }
+        .card-inner { transition: transform 0.6s; transform-style: preserve-3d; }
+        .flipped .card-inner { transform: rotateY(180deg); }
+        .card-front, .card-back {
+            position: absolute; width: 100%; height: 100%;
+            backface-visibility: hidden; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+        }
+        .card-back { transform: rotateY(180deg); }
+
+        .pop-animation { animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes pop { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+
+        .shake-animation { animation: shake 0.5s; }
+        @keyframes shake {
+            0% { transform: translateX(0); } 25% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); } 75% { transform: translateX(-5px); } 100% { transform: translateX(0); }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // ------------------------------------------------
+        // 데이터
+        // ------------------------------------------------
+        const hanjaData = [
+            { id: 1, hanja: "家族", hangul: "가족", meaning: "한 집안 식구" },
+            { id: 2, hanja: "角", hangul: "각", meaning: "뿔, 모서리" },
+            { id: 3, hanja: "感想", hangul: "감상", meaning: "마음속의 생각" },
+            { id: 4, hanja: "經濟", hangul: "경제", meaning: "돈을 벌고 쓰는 활동" },
+            { id: 5, hanja: "固體", hangul: "고체", meaning: "단단한 모양의 물체" },
+            { id: 6, hanja: "公共", hangul: "공공", meaning: "여러 사람, 사회 전체" },
+            { id: 7, hanja: "觀光客", hangul: "관광객", meaning: "놀러 온 손님" },
+            { id: 8, hanja: "觀察", hangul: "관찰", meaning: "자세히 살펴봄" },
+            { id: 9, hanja: "求愛行動", hangul: "구애행동", meaning: "짝을 찾는 몸짓" },
+            { id: 10, hanja: "國寶", hangul: "국보", meaning: "나라의 보물" },
+            { id: 11, hanja: "記事", hangul: "기사", meaning: "신문이나 잡지의 글" },
+            { id: 12, hanja: "農村", hangul: "농촌", meaning: "농사 짓는 마을" },
+            { id: 13, hanja: "踏査", hangul: "답사", meaning: "현장에 가서 조사함" },
+            { id: 14, hanja: "帶分數", hangul: "대분수", meaning: "자연수와 진분수의 합" },
+            { id: 15, hanja: "對照", hangul: "대조", meaning: "서로 비교함" },
+            { id: 16, hanja: "都市", hangul: "도시", meaning: "사람이 많은 지역" },
+            { id: 17, hanja: "等高線", hangul: "등고선", meaning: "높이가 같은 지점의 선" },
+            { id: 18, hanja: "文段", hangul: "문단", meaning: "글의 한 덩어리" },
+            { id: 19, hanja: "文化財", hangul: "문화재", meaning: "문화적 가치가 있는 것" },
+            { id: 20, hanja: "博覽會", hangul: "박람회", meaning: "물건을 벌여놓고 구경시킴" },
+            { id: 21, hanja: "博物館", hangul: "박물관", meaning: "유물을 전시하는 곳" },
+            { id: 22, hanja: "反省", hangul: "반성", meaning: "잘못을 뉘우침" },
+            { id: 23, hanja: "不導體", hangul: "부도체", meaning: "전기가 안 통하는 물체" },
+            { id: 24, hanja: "分銅", hangul: "분동", meaning: "무게를 재는 추" },
+            { id: 25, hanja: "想像", hangul: "상상", meaning: "미루어 생각함" },
+            { id: 26, hanja: "選擇", hangul: "선택", meaning: "골라 뽑음" },
+            { id: 27, hanja: "所得", hangul: "소득", meaning: "얻은 수입" },
+            { id: 28, hanja: "素材", hangul: "소재", meaning: "만드는 재료" },
+            { id: 29, hanja: "俗談", hangul: "속담", meaning: "예로부터 전해오는 말" },
+            { id: 30, hanja: "詩", hangul: "시", meaning: "마음을 노래한 글" },
+            { id: 31, hanja: "實踐", hangul: "실천", meaning: "생각한 것을 행동함" },
+            { id: 32, hanja: "液體", hangul: "액체", meaning: "물 같은 상태" },
+            { id: 33, hanja: "約束", hangul: "약속", meaning: "미래의 일을 정함" },
+            { id: 34, hanja: "讓步", hangul: "양보", meaning: "남을 위해 물러섬" },
+            { id: 35, hanja: "歷史", hangul: "역사", meaning: "인류의 지난 자취" },
+            { id: 36, hanja: "聯想", hangul: "연상", meaning: "관련된 것을 떠올림" },
+            { id: 37, hanja: "年表", hangul: "연표", meaning: "역사를 표로 정리함" },
+            { id: 38, hanja: "預金", hangul: "예금", meaning: "은행에 돈을 맡김" },
+            { id: 39, hanja: "禮節", hangul: "예절", meaning: "예의바른 태도" },
+            { id: 40, hanja: "流通", hangul: "유통", meaning: "물건이 오고 감" },
+            { id: 41, hanja: "銀行", hangul: "은행", meaning: "돈을 다루는 기관" },
+            { id: 42, hanja: "音樂", hangul: "음악", meaning: "소리로 나타내는 예술" },
+            { id: 43, hanja: "資料", hangul: "자료", meaning: "연구의 바탕" },
+            { id: 44, hanja: "電池", hangul: "전지", meaning: "전기를 내는 장치" },
+            { id: 45, hanja: "主題", hangul: "주제", meaning: "중심이 되는 내용" },
+            { id: 46, hanja: "地圖", hangul: "지도", meaning: "땅의 모양을 그린 그림" },
+            { id: 47, hanja: "支出", hangul: "지출", meaning: "돈을 씀" },
+            { id: 48, hanja: "地層", hangul: "지층", meaning: "땅속 흙의 층" },
+            { id: 49, hanja: "秩序", hangul: "질서", meaning: "순서와 규칙" },
+            { id: 50, hanja: "體操", hangul: "체조", meaning: "신체 단련 운동" },
+            { id: 51, hanja: "縮尺", hangul: "축척", meaning: "지도의 줄인 비율" },
+            { id: 52, hanja: "討論", hangul: "토론", meaning: "서로 의견을 나눔" },
+            { id: 53, hanja: "堆積", hangul: "퇴적", meaning: "쌓이는 것" },
+            { id: 54, hanja: "投票", hangul: "투표", meaning: "표를 던져 결정함" },
+            { id: 55, hanja: "販賣", hangul: "판매", meaning: "물건을 팖" },
+            { id: 56, hanja: "偏見", hangul: "편견", meaning: "치우친 생각" },
+            { id: 57, hanja: "便紙", hangul: "편지", meaning: "안부를 전하는 글" },
+            { id: 58, hanja: "韓半島", hangul: "한반도", meaning: "우리나라 땅" },
+            { id: 59, hanja: "幸福", hangul: "행복", meaning: "즐겁고 만족함" },
+            { id: 60, hanja: "化石", hangul: "화석", meaning: "옛 생물의 흔적" },
+            { id: 61, hanja: "和音", hangul: "화음", meaning: "어울리는 소리" },
+            { id: 62, hanja: "話題", hangul: "화제", meaning: "이야깃거리" }
+        ];
+
+        // ------------------------------------------------
+        // 오디오 시스템 (상쾌한 효과음 + 볼륨 밸런스 조정)
+        // ------------------------------------------------
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let globalAudioCtx = null;
+
+        const initAudio = () => {
+            if (!globalAudioCtx) globalAudioCtx = new AudioContext();
+            if (globalAudioCtx.state === 'suspended') globalAudioCtx.resume();
+            return globalAudioCtx;
+        };
+
+        const SoundManager = {
+            playFreshTone: (freq, type, duration, vol = 0.4) => {
+                const ctx = initAudio();
+                if (!ctx) return;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc.type = type; 
+                osc.frequency.setValueAtTime(freq, ctx.currentTime);
+                
+                gain.gain.setValueAtTime(0, ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(vol, ctx.currentTime + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                
+                osc.start();
+                osc.stop(ctx.currentTime + duration);
+            },
+            
+            click: () => {
+                SoundManager.playFreshTone(880, 'sine', 0.1, 0.4); 
+            },
+            
+            flip: () => {
+                const ctx = initAudio();
+                if(!ctx) return;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.1);
+                
+                gain.gain.setValueAtTime(0, ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.2, ctx.currentTime + 0.02);
+                gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.15);
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.2);
+            },
+            
+            correct: () => {
+                [1318.51, 1760.00, 2217.46].forEach((freq, i) => {
+                    setTimeout(() => SoundManager.playFreshTone(freq, 'sine', 0.5, 0.4), i * 80);
+                });
+            },
+            
+            wrong: () => {
+                const ctx = initAudio();
+                if(!ctx) return;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(300, ctx.currentTime);
+                osc.frequency.linearRampToValueAtTime(200, ctx.currentTime + 0.3);
+                
+                gain.gain.setValueAtTime(0, ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.05);
+                gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.3);
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.35);
+            },
+            
+            win: () => {
+                const melody = [1318, 1318, 1318, 1760, 2217];
+                melody.forEach((freq, i) => {
+                    const dur = i === melody.length - 1 ? 0.8 : 0.2;
+                    setTimeout(() => SoundManager.playFreshTone(freq, 'sine', dur, 0.5), i * 150);
+                });
+            }
+        };
+
+        // ------------------------------------------------
+        // 유틸리티
+        // ------------------------------------------------
+        const shuffle = (array) => {
+            let currentIndex = array.length, randomIndex;
+            while (currentIndex != 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        };
+
+        const formatTime = (seconds) => {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins}분 ${secs < 10 ? '0' : ''}${secs}초`;
+        };
+
+        const getHanjaFontSize = (text) => {
+            const len = text ? text.length : 0;
+            if (len <= 2) return 'text-6xl sm:text-7xl md:text-8xl'; 
+            if (len === 3) return 'text-5xl sm:text-6xl md:text-7xl'; 
+            if (len === 4) return 'text-4xl sm:text-5xl md:text-6xl'; 
+            return 'text-3xl sm:text-4xl md:text-5xl'; 
+        };
+
+        const getListHanjaSize = (text) => {
+             const len = text ? text.length : 0;
+             if (len <= 2) return 'text-4xl';
+             if (len === 3) return 'text-3xl';
+             return 'text-2xl';
+        };
+
+        // ------------------------------------------------
+        // BGM 플레이어 (짐노페디 No.1)
+        // ------------------------------------------------
+        const BGMPlayer = () => {
+            const [isPlaying, setIsPlaying] = useState(false);
+            const audioRef = useRef(null);
+            
+            const BGM_URL = "./suno_bgm.mp3"; 
+
+            useEffect(() => {
+                const audio = new Audio(BGM_URL);
+                audio.loop = true;
+                audio.volume = 0.3; // 배경음악은 아주 작게
+                audio.preload = "auto";
+                
+                audioRef.current = audio;
+
+                return () => {
+                    if(audioRef.current) {
+                        audioRef.current.pause();
+                        audioRef.current = null;
+                    }
+                };
+            }, []);
+
+
+            const toggleBGM = () => {
+                if (!audioRef.current) return;
+                initAudio();
+
+                if (isPlaying) {
+                    audioRef.current.pause();
+                } else {
+                    const playPromise = audioRef.current.play();
+                    if (playPromise !== undefined) {
+                        playPromise.catch(error => {
+                            console.log("BGM 재생 차단됨");
+                        });
+                    }
+                }
+                setIsPlaying(!isPlaying);
+            };
+
+            return (
+                <div className="fixed bottom-6 right-6 z-50">
+                    <button 
+                        onClick={toggleBGM}
+                        className={`p-4 rounded-full shadow-2xl transition-all transform hover:scale-110 active:scale-90 flex items-center justify-center border-4 border-white
+                            ${isPlaying ? 'bg-indigo-400' : 'bg-gray-400'}`}
+                        title={isPlaying ? "음악 끄기" : "음악 켜기"}
+                        style={{ width: '60px', height: '60px' }}
+                    >
+                        <span className="text-2xl">{isPlaying ? "🎹" : "🔇"}</span>
+                    </button>
+                </div>
+            );
+        };
+
+        // ------------------------------------------------
+        // 메인 메뉴 (저작권 표시 추가됨)
+        // ------------------------------------------------
+        const MainMenu = ({ setMode }) => {
+            const handleModeChange = (mode) => {
+                SoundManager.click();
+                setMode(mode);
+            };
+
+            return (
+                <div className="flex flex-col items-center justify-center min-h-screen bg-green-50 p-4 relative overflow-hidden" onClick={initAudio}>
+                    <div className="absolute top-10 left-10 w-32 h-32 bg-green-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
+                    <div className="absolute bottom-10 right-10 w-32 h-32 bg-yellow-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
+
+                    <div className="z-10 text-center mb-8 mt-4">
+                        <h1 className="text-4xl md:text-5xl font-jua text-green-700 mb-2 drop-shadow-lg leading-tight">
+                            준5급<br className="sm:hidden" /> 한자 놀이터
+                        </h1>
+                        <p className="text-green-600 text-lg font-bold mt-2">즐겁게 배우는 한자 62자!</p>
+                    </div>
+                    
+                    <div className="grid gap-4 w-full max-w-xs z-10 mb-8">
+                        <button onClick={() => handleModeChange('list')} className="bg-teal-500 hover:bg-teal-600 text-white font-jua text-2xl py-4 rounded-2xl shadow-lg transition transform active:scale-95">
+                            📋 전체 한자 보기
+                        </button>
+                        <button onClick={() => handleModeChange('flashcard')} className="bg-yellow-400 hover:bg-yellow-500 text-white font-jua text-2xl py-4 rounded-2xl shadow-lg transition transform active:scale-95">
+                            📖 공부하기
+                        </button>
+                        <button onClick={() => handleModeChange('quiz')} className="bg-blue-400 hover:bg-blue-500 text-white font-jua text-2xl py-4 rounded-2xl shadow-lg transition transform active:scale-95">
+                            🎯 퀴즈 풀기
+                        </button>
+                        <button onClick={() => handleModeChange('memory')} className="bg-pink-400 hover:bg-pink-500 text-white font-jua text-2xl py-4 rounded-2xl shadow-lg transition transform active:scale-95">
+                            🧩 짝 맞추기
+                        </button>
+                    </div>
+
+                    {/* 저작권 및 출처 표시 Footer */}
+                    <div className="absolute bottom-4 text-center z-10 text-gray-500 text-xs sm:text-sm font-sans opacity-70">
+                        <p className="mb-1">
+                            <span className="font-bold">Music by Suno</span> | <span>Font: 배달의민족 주아, Noto Sans</span>
+                        </p>
+                        <p>
+                            &copy; 2024 Hanja Playground. All rights reserved.
+                        </p>
+                    </div>
+                </div>
+            );
+        };
+
+        // ... [나머지 컴포넌트들: HanjaListView, FlashcardGame, QuizGame, MemoryGame, App] ...
+        // (코드가 길어 생략된 부분은 위와 동일하며, 마지막에 렌더링 됩니다)
+
+        const HanjaListView = ({ onBack }) => {
+            return (
+                <div className="min-h-screen bg-teal-50 pb-20">
+                    <div className="sticky top-0 bg-teal-100 shadow-md z-20 px-4 py-3 flex items-center justify-between">
+                        <button 
+                            onClick={() => { SoundManager.click(); onBack(); }} 
+                            className="bg-white text-teal-700 px-4 py-2 rounded-lg font-bold shadow-sm active:scale-95 text-sm sm:text-base whitespace-nowrap"
+                        >
+                            ◀ 뒤로
+                        </button>
+                        <h2 className="text-xl sm:text-2xl font-jua text-teal-800 text-center flex-1 mx-2 truncate">
+                            전체 한자 (62자)
+                        </h2>
+                        <div className="w-16"></div>
+                    </div>
+
+                    <div className="max-w-6xl mx-auto p-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                            {hanjaData.map((item) => (
+                                <div key={item.id} className="bg-white p-3 rounded-xl shadow-sm border border-teal-100 flex flex-col items-center text-center">
+                                    <span className={`font-bold text-gray-800 mb-1 whitespace-nowrap overflow-hidden ${getListHanjaSize(item.hanja)}`}>
+                                        {item.hanja}
+                                    </span>
+                                    <span className="text-lg font-jua text-teal-600 leading-none mb-1">{item.hangul}</span>
+                                    <span className="text-xs text-gray-500 leading-tight break-keep">{item.meaning}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const FlashcardGame = ({ onBack }) => {
+            const [cards, setCards] = useState([]);
+            const [index, setIndex] = useState(0);
+            const [isFlipped, setIsFlipped] = useState(false);
+
+            useEffect(() => {
+                setCards(shuffle([...hanjaData]));
+            }, []);
+
+            const handleNext = () => {
+                SoundManager.click();
+                setIsFlipped(false);
+                setTimeout(() => {
+                    setIndex((prev) => (prev + 1) % cards.length);
+                }, 150);
+            };
+
+            const handlePrev = () => {
+                SoundManager.click();
+                setIsFlipped(false);
+                setTimeout(() => {
+                    setIndex((prev) => (prev - 1 + cards.length) % cards.length);
+                }, 150);
+            };
+
+            const handleCardClick = () => {
+                SoundManager.flip();
+                setIsFlipped(!isFlipped);
+            };
+
+            if (cards.length === 0) return <div>로딩중...</div>;
+            
+            const currentHanja = cards[index].hanja;
+
+            return (
+                <div className="flex flex-col items-center justify-center min-h-screen bg-yellow-50 p-4 pb-20">
+                    <div className="w-full max-w-md flex justify-between items-center mb-6">
+                        <button onClick={() => { SoundManager.click(); onBack(); }} className="text-gray-500 hover:text-gray-700 font-bold text-lg bg-white px-3 py-1 rounded-lg shadow-sm">
+                            ◀ 나가기
+                        </button>
+                        <span className="font-jua text-xl text-yellow-800 bg-yellow-200 px-3 py-1 rounded-full">{index + 1} / {cards.length}</span>
+                    </div>
+
+                    <div 
+                        className={`relative w-full max-w-[300px] aspect-[3/4] cursor-pointer perspective-1000 ${isFlipped ? 'flipped' : ''}`}
+                        onClick={handleCardClick}
+                    >
+                        <div className="card-inner w-full h-full relative">
+                            <div className="card-front bg-white border-4 border-yellow-300 rounded-3xl flex flex-col items-center justify-center shadow-xl p-2">
+                                <span className={`${getHanjaFontSize(currentHanja)} font-bold text-gray-800 mb-6 whitespace-nowrap overflow-hidden text-ellipsis px-2`}>
+                                    {currentHanja}
+                                </span>
+                                <span className="text-gray-500 text-sm bg-gray-100 px-3 py-1 rounded-full animate-bounce">터치하여 뜻 보기</span>
+                            </div>
+                            <div className="card-back bg-yellow-300 border-4 border-yellow-400 rounded-3xl flex flex-col items-center justify-center shadow-xl p-4 text-center">
+                                <span className="text-5xl font-jua text-white drop-shadow-md mb-4">{cards[index].hangul}</span>
+                                <div className="bg-white/90 rounded-xl p-4 w-full shadow-inner">
+                                    <span className="text-gray-800 font-bold block text-lg word-keep-all">{cards[index].meaning}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex gap-4 mt-8 w-full max-w-md justify-center">
+                        <button onClick={handlePrev} className="bg-white border-2 border-gray-200 py-3 px-6 rounded-xl shadow-lg hover:bg-gray-50 active:scale-95 transition font-bold text-gray-600">
+                            이전
+                        </button>
+                        <button onClick={handleNext} className="flex-1 bg-yellow-400 text-white font-jua text-xl py-3 px-6 rounded-xl shadow-lg hover:bg-yellow-500 active:scale-95 transition">
+                            다음 단어 ▶
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
+        const QuizGame = ({ onBack }) => {
+            const [gameState, setGameState] = useState('setup'); 
+            const [totalQ, setTotalQ] = useState(10);
+            const [questions, setQuestions] = useState([]);
+            const [currentIndex, setCurrentIndex] = useState(0);
+            const [score, setScore] = useState(0);
+            const [feedback, setFeedback] = useState(null); 
+            const [timer, setTimer] = useState(0);
+            const [shake, setShake] = useState(false);
+            const timerRef = useRef(null);
+
+            const handleStart = () => {
+                SoundManager.click();
+                const shuffled = shuffle([...hanjaData]);
+                const selected = shuffled.slice(0, totalQ);
+                
+                const quizSet = selected.map(q => {
+                    let distractors = [];
+                    while (distractors.length < 3) {
+                        const d = hanjaData[Math.floor(Math.random() * hanjaData.length)];
+                        if (d.id !== q.id && !distractors.find(x => x.id === d.id)) {
+                            distractors.push(d);
+                        }
+                    }
+                    return {
+                        question: q,
+                        options: shuffle([q, ...distractors])
+                    };
+                });
+
+                setQuestions(quizSet);
+                setGameState('play');
+                setScore(0);
+                setCurrentIndex(0);
+                setTimer(0);
+                
+                timerRef.current = setInterval(() => {
+                    setTimer(t => t + 1);
+                }, 1000);
+            };
+
+            const handleAnswer = (selectedOption) => {
+                if (feedback) return;
+
+                const currentQ = questions[currentIndex].question;
+                if (selectedOption.id === currentQ.id) {
+                    SoundManager.correct();
+                    setScore(prev => prev + 1);
+                    setFeedback('correct');
+                } else {
+                    SoundManager.wrong();
+                    setFeedback('wrong');
+                    setShake(true);
+                    setTimeout(() => setShake(false), 500);
+                }
+
+                setTimeout(() => {
+                    setFeedback(null);
+                    if (currentIndex < totalQ - 1) {
+                        setCurrentIndex(prev => prev + 1);
+                    } else {
+                        clearInterval(timerRef.current);
+                        SoundManager.win();
+                        setGameState('result');
+                    }
+                }, 1000);
+            };
+
+            if (gameState === 'setup') {
+                return (
+                    <div className="flex flex-col items-center justify-center min-h-screen bg-blue-50 p-4">
+                        <div className="bg-white p-6 rounded-3xl shadow-xl w-full max-w-sm text-center">
+                            <h2 className="text-3xl font-jua text-blue-600 mb-6">퀴즈 설정</h2>
+                            <label className="block text-gray-700 mb-2 font-bold">문제 개수 (1 ~ 62)</label>
+                            <input 
+                                type="number" 
+                                value={totalQ}
+                                onChange={(e) => {
+                                    let val = parseInt(e.target.value);
+                                    if(isNaN(val)) val = "";
+                                    else if(val > 62) val = 62;
+                                    else if(val < 1) val = 1;
+                                    setTotalQ(val);
+                                }}
+                                className="w-full text-center text-3xl border-2 border-blue-200 rounded-xl p-3 mb-6 focus:outline-none focus:border-blue-500"
+                            />
+                            <div className="flex gap-2">
+                                <button onClick={() => { SoundManager.click(); onBack(); }} className="flex-1 bg-gray-200 text-gray-600 font-jua py-3 rounded-xl hover:bg-gray-300">취소</button>
+                                <button onClick={handleStart} className="flex-1 bg-blue-500 text-white font-jua py-3 rounded-xl hover:bg-blue-600 shadow-md">시작!</button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (gameState === 'result') {
+                return (
+                    <div className="flex flex-col items-center justify-center min-h-screen bg-blue-50 p-4">
+                        <div className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-sm text-center pop-animation">
+                            <h2 className="text-4xl font-jua text-blue-600 mb-6">결과 발표!</h2>
+                            <div className="space-y-4 mb-8 text-lg">
+                                <div className="flex justify-between border-b pb-2">
+                                    <span className="text-gray-500">총 문제</span>
+                                    <span className="font-bold text-gray-800">{totalQ}개</span>
+                                </div>
+                                <div className="flex justify-between border-b pb-2">
+                                    <span className="text-green-600 font-bold">정답</span>
+                                    <span className="font-bold text-green-600">{score}개</span>
+                                </div>
+                                <div className="flex justify-between border-b pb-2">
+                                    <span className="text-red-500 font-bold">오답</span>
+                                    <span className="font-bold text-red-500">{totalQ - score}개</span>
+                                </div>
+                                <div className="flex justify-between border-b pb-2">
+                                    <span className="text-blue-600 font-bold">정답률</span>
+                                    <span className="font-bold text-blue-600">{Math.round((score/totalQ)*100)}%</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-gray-500">소요 시간</span>
+                                    <span className="font-bold">{formatTime(timer)}</span>
+                                </div>
+                            </div>
+                            <button onClick={() => { SoundManager.click(); setGameState('setup'); }} className="w-full bg-blue-500 text-white font-jua py-4 rounded-xl text-xl shadow-lg hover:bg-blue-600">
+                                다시 하기
+                            </button>
+                            <button onClick={() => { SoundManager.click(); onBack(); }} className="mt-4 text-gray-500 hover:text-gray-700 underline">
+                                메인으로
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            const currentData = questions[currentIndex];
+            const currentHanja = currentData.question.hanja;
+
+            return (
+                <div className="flex flex-col items-center justify-center min-h-screen bg-blue-50 p-4 pb-20">
+                    <div className="w-full max-w-md flex justify-between items-center mb-4">
+                        <button onClick={() => { clearInterval(timerRef.current); SoundManager.click(); onBack(); }} className="text-gray-500 font-bold bg-white px-3 py-1 rounded-lg">◀ 종료</button>
+                        <div className="font-mono text-lg bg-white px-3 py-1 rounded-lg shadow text-blue-600">
+                            ⏱️ {formatTime(timer)}
+                        </div>
+                    </div>
+
+                    <div className="w-full max-w-md mb-2 px-1">
+                        <span className="text-blue-800 font-bold text-lg">문제 {currentIndex + 1} / {totalQ}</span>
+                    </div>
+
+                    <div className={`bg-white p-6 rounded-3xl shadow-xl w-full max-w-md text-center mb-4 relative border-4 border-blue-100 min-h-[200px] flex flex-col justify-center items-center ${shake ? 'shake-animation' : ''}`}>
+                        <h2 className="text-gray-400 text-sm absolute top-4">다음 한자의 훈과 음은?</h2>
+                        <div className={`${getHanjaFontSize(currentHanja)} font-bold text-gray-800 mt-4 whitespace-nowrap overflow-hidden text-ellipsis w-full px-2`}>
+                            {currentHanja}
+                        </div>
+                        
+                        {feedback === 'correct' && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-green-100/90 rounded-2xl pop-animation z-10">
+                                <span className="text-8xl">⭕</span>
+                            </div>
+                        )}
+                        {feedback === 'wrong' && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-red-100/90 rounded-2xl pop-animation z-10">
+                                <div className="text-center">
+                                    <span className="text-7xl block mb-2">❌</span>
+                                    <span className="text-xl font-bold text-red-600">{currentData.question.hangul}</span>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 w-full max-w-md">
+                        {currentData.options.map((opt, idx) => (
+                            <button
+                                key={idx}
+                                onClick={() => handleAnswer(opt)}
+                                disabled={!!feedback}
+                                className={`
+                                    py-3 px-2 rounded-xl font-jua text-xl shadow-md transition transform active:scale-95 flex flex-col items-center justify-center h-20
+                                    ${feedback && opt.id === currentData.question.id ? 'bg-green-500 text-white' : 'bg-white hover:bg-blue-50 text-gray-700'}
+                                    ${feedback === 'wrong' && opt.id !== currentData.question.id ? 'opacity-50' : ''}
+                                `}
+                            >
+                                <span className="text-lg sm:text-xl mb-1">{opt.hangul}</span>
+                                <span className="text-xs font-sans font-normal opacity-70 line-clamp-1">{opt.meaning}</span>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        const MemoryGame = ({ onBack }) => {
+            const [gameState, setGameState] = useState('setup');
+            const [pairCount, setPairCount] = useState(6);
+            const [cards, setCards] = useState([]);
+            const [flipped, setFlipped] = useState([]);
+            const [matched, setMatched] = useState([]);
+            const [isLocked, setIsLocked] = useState(false);
+            const [timer, setTimer] = useState(0);
+            const timerRef = useRef(null);
+
+            const handleStart = () => {
+                SoundManager.click();
+                const selected = shuffle([...hanjaData]).slice(0, pairCount);
+                const deck = [];
+                selected.forEach((item) => {
+                    deck.push({ id: item.id, content: item.hanja, type: 'hanja', pairId: item.id });
+                    deck.push({ id: item.id, content: item.hangul, type: 'hangul', pairId: item.id });
+                });
+                
+                const shuffledDeck = shuffle(deck).map((card, idx) => ({ ...card, uniqueId: idx }));
+                setCards(shuffledDeck);
+                setFlipped([]);
+                setMatched([]);
+                setIsLocked(false);
+                setGameState('play');
+                setTimer(0);
+
+                timerRef.current = setInterval(() => {
+                    setTimer(t => t + 1);
+                }, 1000);
+            };
+
+            const handleCardClick = (index) => {
+                if (isLocked) return;
+                if (flipped.includes(index)) return;
+                if (matched.includes(cards[index].pairId)) return;
+
+                SoundManager.flip();
+                const newFlipped = [...flipped, index];
+                setFlipped(newFlipped);
+
+                if (newFlipped.length === 2) {
+                    setIsLocked(true);
+                    const firstCard = cards[newFlipped[0]];
+                    const secondCard = cards[newFlipped[1]];
+
+                    if (firstCard.pairId === secondCard.pairId) {
+                        setTimeout(() => SoundManager.correct(), 300);
+                        const newMatched = [...matched, firstCard.pairId];
+                        setMatched(newMatched);
+                        setFlipped([]);
+                        setIsLocked(false);
+
+                        if (newMatched.length === pairCount) {
+                            clearInterval(timerRef.current);
+                            SoundManager.win();
+                            setTimeout(() => setGameState('result'), 500);
+                        }
+                    } else {
+                        setTimeout(() => SoundManager.wrong(), 500);
+                        setTimeout(() => {
+                            setFlipped([]);
+                            setIsLocked(false);
+                        }, 1000);
+                    }
+                }
+            };
+
+            if (gameState === 'setup') {
+                return (
+                    <div className="flex flex-col items-center justify-center min-h-screen bg-pink-50 p-4">
+                        <div className="bg-white p-6 rounded-3xl shadow-xl w-full max-w-sm text-center">
+                            <h2 className="text-3xl font-jua text-pink-600 mb-6">짝 맞추기 설정</h2>
+                            <label className="block text-gray-700 mb-2 font-bold">맞출 짝 개수 (1 ~ 62)</label>
+                            <input 
+                                type="number" 
+                                value={pairCount}
+                                onChange={(e) => {
+                                    let val = parseInt(e.target.value);
+                                    if(isNaN(val)) val = "";
+                                    else if(val > 62) val = 62;
+                                    else if(val < 1) val = 1;
+                                    setPairCount(val);
+                                }}
+                                className="w-full text-center text-3xl border-2 border-pink-200 rounded-xl p-3 mb-6 focus:outline-none focus:border-pink-500"
+                            />
+                            <div className="flex gap-2">
+                                <button onClick={() => { SoundManager.click(); onBack(); }} className="flex-1 bg-gray-200 text-gray-600 font-jua py-3 rounded-xl hover:bg-gray-300">취소</button>
+                                <button onClick={handleStart} className="flex-1 bg-pink-500 text-white font-jua py-3 rounded-xl hover:bg-pink-600 shadow-md">시작!</button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (gameState === 'result') {
+                return (
+                    <div className="flex flex-col items-center justify-center min-h-screen bg-pink-50 p-4">
+                        <div className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-sm text-center pop-animation">
+                            <div className="text-8xl mb-4">🎉</div>
+                            <h2 className="text-4xl font-jua text-pink-600 mb-6">성공!</h2>
+                            <div className="bg-pink-50 p-4 rounded-xl mb-6">
+                                <p className="text-gray-600">소요 시간</p>
+                                <p className="text-3xl font-bold text-pink-700">{formatTime(timer)}</p>
+                            </div>
+                            <button onClick={() => { SoundManager.click(); setGameState('setup'); }} className="w-full bg-pink-500 text-white font-jua py-4 rounded-xl shadow-lg hover:bg-pink-600 mb-2">
+                                다시 하기
+                            </button>
+                            <button onClick={() => { SoundManager.click(); onBack(); }} className="text-gray-500 hover:text-gray-700 underline">
+                                메인으로
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="flex flex-col items-center justify-center min-h-screen bg-pink-50 p-2 pb-20">
+                    <div className="w-full max-w-3xl flex justify-between items-center mb-4 px-2">
+                        <button onClick={() => { clearInterval(timerRef.current); SoundManager.click(); onBack(); }} className="text-gray-500 font-bold bg-white px-3 py-1 rounded-lg">◀ 종료</button>
+                        <div className="flex gap-3 items-center">
+                            <span className="font-jua text-pink-600 text-sm sm:text-base">남은 짝: {pairCount - matched.length}</span>
+                            <div className="font-mono bg-white px-2 py-1 rounded shadow text-pink-600 text-sm">
+                                {formatTime(timer)}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className={`grid gap-2 w-full max-w-3xl ${pairCount > 12 ? 'grid-cols-4 sm:grid-cols-6' : 'grid-cols-3 sm:grid-cols-4'}`}>
+                        {cards.map((card, idx) => {
+                            const isFlippedCard = flipped.includes(idx) || matched.includes(card.pairId);
+                            const isMatchedCard = matched.includes(card.pairId);
+                            
+                            let textSize;
+                            if (card.type === 'hanja') {
+                                if (card.content.length >= 3) textSize = pairCount > 15 ? 'text-xs sm:text-sm' : 'text-base sm:text-lg';
+                                else textSize = pairCount > 15 ? 'text-lg sm:text-xl' : 'text-2xl sm:text-3xl';
+                            } else {
+                                textSize = pairCount > 15 ? 'text-xs sm:text-sm' : 'text-base sm:text-xl';
+                            }
+                            
+                            return (
+                                <div 
+                                    key={card.uniqueId}
+                                    onClick={() => handleCardClick(idx)}
+                                    className={`
+                                        aspect-square rounded-lg flex items-center justify-center text-center cursor-pointer shadow-md transition-all duration-300 overflow-hidden
+                                        ${isFlippedCard ? 'bg-white rotate-y-180' : 'bg-pink-300'}
+                                        ${isMatchedCard ? 'opacity-20 scale-90' : ''}
+                                    `}
+                                >
+                                    {isFlippedCard ? (
+                                        <span className={`font-bold whitespace-nowrap px-1 ${textSize} ${card.type === 'hanja' ? 'text-gray-800' : 'font-jua text-pink-600'}`}>
+                                            {card.content}
+                                        </span>
+                                    ) : (
+                                        <span className="text-xl opacity-50">❓</span>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [mode, setMode] = useState('menu'); 
+
+            useEffect(() => {
+                const enableAudio = () => {
+                    initAudio();
+                };
+                window.addEventListener('click', enableAudio, { once: true });
+                window.addEventListener('touchstart', enableAudio, { once: true });
+                return () => {
+                    window.removeEventListener('click', enableAudio);
+                    window.removeEventListener('touchstart', enableAudio);
+                };
+            }, []);
+
+            return (
+                <React.Fragment>
+                    <BGMPlayer />
+                    {mode === 'menu' && <MainMenu setMode={setMode} />}
+                    {mode === 'list' && <HanjaListView onBack={() => setMode('menu')} />}
+                    {mode === 'flashcard' && <FlashcardGame onBack={() => setMode('menu')} />}
+                    {mode === 'quiz' && <QuizGame onBack={() => setMode('menu')} />}
+                    {mode === 'memory' && <MemoryGame onBack={() => setMode('menu')} />}
+                </React.Fragment>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
