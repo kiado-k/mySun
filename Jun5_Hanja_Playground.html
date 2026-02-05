@@ -242,9 +242,9 @@
         };
 
         // ------------------------------------------------
-        // BGM 플레이어 (짐노페디 No.1)
+        // BGM 플레이어 (화면 우측 상단 고정 & 메인 메뉴에서만 표시)
         // ------------------------------------------------
-        const BGMPlayer = () => {
+        const BGMPlayer = ({ mode }) => {
             const [isPlaying, setIsPlaying] = useState(false);
             const audioRef = useRef(null);
             
@@ -253,7 +253,7 @@
             useEffect(() => {
                 const audio = new Audio(BGM_URL);
                 audio.loop = true;
-                audio.volume = 0.3; // 배경음악은 아주 작게
+                audio.volume = 0.2; // 배경음악은 아주 작게
                 audio.preload = "auto";
                 
                 audioRef.current = audio;
@@ -265,7 +265,6 @@
                     }
                 };
             }, []);
-
 
             const toggleBGM = () => {
                 if (!audioRef.current) return;
@@ -284,16 +283,19 @@
                 setIsPlaying(!isPlaying);
             };
 
+            // 메인 메뉴(menu)가 아닐 때는 버튼을 렌더링하지 않음 (음악은 계속 재생됨)
+            if (mode !== 'menu') return null;
+
             return (
-                <div className="fixed bottom-6 right-6 z-50">
+                <div className="fixed top-4 right-4 z-50">
                     <button 
                         onClick={toggleBGM}
-                        className={`p-4 rounded-full shadow-2xl transition-all transform hover:scale-110 active:scale-90 flex items-center justify-center border-4 border-white
-                            ${isPlaying ? 'bg-indigo-400' : 'bg-gray-400'}`}
+                        className={`px-4 py-2 rounded-full shadow-xl transition-all transform hover:scale-105 active:scale-95 flex items-center gap-2 border-2 border-white
+                            ${isPlaying ? 'bg-green-500 text-white' : 'bg-gray-400 text-gray-100'}`}
                         title={isPlaying ? "음악 끄기" : "음악 켜기"}
-                        style={{ width: '60px', height: '60px' }}
                     >
-                        <span className="text-2xl">{isPlaying ? "🎹" : "🔇"}</span>
+                        <span className="text-xl">{isPlaying ? "🔊" : "🔇"}</span>
+                        <span className="font-jua text-sm hidden sm:inline">{isPlaying ? "BGM ON" : "BGM OFF"}</span>
                     </button>
                 </div>
             );
@@ -320,7 +322,7 @@
                         <p className="text-green-600 text-lg font-bold mt-2">즐겁게 배우는 한자 62자!</p>
                     </div>
                     
-                    <div className="grid gap-4 w-full max-w-xs z-10 mb-8">
+                    <div className="grid gap-4 w-full max-w-xs z-10 mb-12">
                         <button onClick={() => handleModeChange('list')} className="bg-teal-500 hover:bg-teal-600 text-white font-jua text-2xl py-4 rounded-2xl shadow-lg transition transform active:scale-95">
                             📋 전체 한자 보기
                         </button>
@@ -336,21 +338,21 @@
                     </div>
 
                     {/* 저작권 및 출처 표시 Footer */}
-                    <div className="absolute bottom-4 text-center z-10 text-gray-500 text-xs sm:text-sm font-sans opacity-70">
+                    <div className="absolute bottom-4 text-center z-10 text-gray-500 text-xs sm:text-sm font-sans opacity-70 w-full px-4">
                         <p className="mb-1">
                             <span className="font-bold">Music by Suno</span> | <span>Font: 배달의민족 주아, Noto Sans</span>
                         </p>
                         <p>
-                            &copy; 2024 Hanja Playground. All rights reserved.
+                            &copy; 2026 kiado-k. All rights reserved.
                         </p>
                     </div>
                 </div>
             );
         };
 
-        // ... [나머지 컴포넌트들: HanjaListView, FlashcardGame, QuizGame, MemoryGame, App] ...
-        // (코드가 길어 생략된 부분은 위와 동일하며, 마지막에 렌더링 됩니다)
-
+        // ------------------------------------------------
+        // 전체 한자 보기
+        // ------------------------------------------------
         const HanjaListView = ({ onBack }) => {
             return (
                 <div className="min-h-screen bg-teal-50 pb-20">
@@ -384,6 +386,9 @@
             );
         };
 
+        // ------------------------------------------------
+        // 공부하기
+        // ------------------------------------------------
         const FlashcardGame = ({ onBack }) => {
             const [cards, setCards] = useState([]);
             const [index, setIndex] = useState(0);
@@ -459,6 +464,9 @@
             );
         };
 
+        // ------------------------------------------------
+        // 퀴즈 게임
+        // ------------------------------------------------
         const QuizGame = ({ onBack }) => {
             const [gameState, setGameState] = useState('setup'); 
             const [totalQ, setTotalQ] = useState(10);
@@ -650,6 +658,9 @@
             );
         };
 
+        // ------------------------------------------------
+        // 짝 맞추기
+        // ------------------------------------------------
         const MemoryGame = ({ onBack }) => {
             const [gameState, setGameState] = useState('setup');
             const [pairCount, setPairCount] = useState(6);
@@ -833,7 +844,7 @@
 
             return (
                 <React.Fragment>
-                    <BGMPlayer />
+                    <BGMPlayer mode={mode} />
                     {mode === 'menu' && <MainMenu setMode={setMode} />}
                     {mode === 'list' && <HanjaListView onBack={() => setMode('menu')} />}
                     {mode === 'flashcard' && <FlashcardGame onBack={() => setMode('menu')} />}
