@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>준5급 한자 놀이터 (최종 완성)</title>
+    <title>준5급 한자 놀이터 (말하기 기능 추가)</title>
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -40,6 +40,16 @@
         @keyframes shake {
             0% { transform: translateX(0); } 25% { transform: translateX(-5px); }
             50% { transform: translateX(5px); } 75% { transform: translateX(-5px); } 100% { transform: translateX(0); }
+        }
+
+        /* 마이크 애니메이션 추가 */
+        .mic-pulse {
+            animation: pulse-mic 1.5s infinite;
+        }
+        @keyframes pulse-mic {
+            0% { box-shadow: 0 0 0 0 rgba(147, 51, 234, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(147, 51, 234, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(147, 51, 234, 0); }
         }
     </style>
 </head>
@@ -156,7 +166,7 @@
             
             flip: () => {
                 const ctx = initAudio();
-                if(!ctx) return;
+                if (!ctx) return;
                 const osc = ctx.createOscillator();
                 const gain = ctx.createGain();
                 osc.type = 'sine';
@@ -181,7 +191,7 @@
             
             wrong: () => {
                 const ctx = initAudio();
-                if(!ctx) return;
+                if (!ctx) return;
                 const osc = ctx.createOscillator();
                 const gain = ctx.createGain();
                 osc.type = 'triangle';
@@ -253,7 +263,7 @@
             useEffect(() => {
                 const audio = new Audio(BGM_URL);
                 audio.loop = true;
-                audio.volume = 0.1; // 배경음악은 아주 작게
+                audio.volume = 0.2; // 배경음악은 아주 작게
                 audio.preload = "auto";
                 
                 audioRef.current = audio;
@@ -334,6 +344,10 @@
                         </button>
                         <button onClick={() => handleModeChange('memory')} className="bg-pink-400 hover:bg-pink-500 text-white font-jua text-2xl py-4 rounded-2xl shadow-lg transition transform active:scale-95">
                             🧩 짝 맞추기
+                        </button>
+                        {/* 새로운 기능 버튼 추가 */}
+                        <button onClick={() => handleModeChange('speaking')} className="bg-violet-500 hover:bg-violet-600 text-white font-jua text-2xl py-4 rounded-2xl shadow-lg transition transform active:scale-95">
+                            🎙️ 말하기 연습
                         </button>
                     </div>
 
@@ -827,6 +841,246 @@
             );
         };
 
+        // ------------------------------------------------
+        // 말하기 연습 (신규 기능)
+        // ------------------------------------------------
+        const SpeakingGame = ({ onBack }) => {
+            const [gameState, setGameState] = useState('setup');
+            const [totalQ, setTotalQ] = useState(10);
+            const [questions, setQuestions] = useState([]);
+            const [currentIndex, setCurrentIndex] = useState(0);
+            const [score, setScore] = useState(0);
+            const [timer, setTimer] = useState(0);
+            const [transcript, setTranscript] = useState("");
+            const [isListening, setIsListening] = useState(false);
+            const [feedback, setFeedback] = useState(null); // 'correct', 'wrong', null
+            const timerRef = useRef(null);
+            const recognitionRef = useRef(null);
+
+            // STT 초기화
+            useEffect(() => {
+                if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                    const recognition = new SpeechRecognition();
+                    recognition.lang = 'ko-KR';
+                    recognition.continuous = false;
+                    recognition.interimResults = false;
+
+                    recognition.onresult = (event) => {
+                        const speechResult = event.results[0][0].transcript;
+                        setTranscript(speechResult);
+                        checkAnswer(speechResult);
+                        setIsListening(false);
+                    };
+
+                    recognition.onerror = (event) => {
+                        console.error("Speech recognition error", event.error);
+                        setIsListening(false);
+                    };
+                    
+                    recognition.onend = () => {
+                        setIsListening(false);
+                    };
+
+                    recognitionRef.current = recognition;
+                } else {
+                    alert("이 브라우저는 음성 인식을 지원하지 않습니다. 크롬 브라우저를 사용해주세요.");
+                }
+            }, [currentIndex, gameState]); // 의존성 추가
+
+            const checkAnswer = (spokenText) => {
+                const currentQ = questions[currentIndex];
+                // 공백 제거 후 비교
+                const cleanSpoken = spokenText.replace(/\s+/g, '');
+                const cleanTarget = currentQ.hangul.replace(/\s+/g, '');
+
+                if (cleanSpoken === cleanTarget) {
+                    SoundManager.correct();
+                    setScore(prev => prev + 1);
+                    setFeedback('correct');
+                    setTimeout(() => nextQuestion(), 1500);
+                } else {
+                    SoundManager.wrong();
+                    setFeedback('wrong');
+                    // 틀렸을 때는 확인 버튼을 눌러야 넘어감 (또는 일정 시간 후)
+                }
+            };
+
+            const nextQuestion = () => {
+                setFeedback(null);
+                setTranscript("");
+                if (currentIndex < totalQ - 1) {
+                    setCurrentIndex(prev => prev + 1);
+                } else {
+                    endGame();
+                }
+            };
+
+            const endGame = () => {
+                clearInterval(timerRef.current);
+                SoundManager.win();
+                setGameState('result');
+            };
+
+            const startListening = () => {
+                if (recognitionRef.current && !isListening) {
+                    try {
+                        recognitionRef.current.start();
+                        setIsListening(true);
+                        setTranscript("듣고 있어요...");
+                    } catch (e) {
+                        console.error(e);
+                    }
+                }
+            };
+
+            const handleStart = () => {
+                SoundManager.click();
+                const shuffled = shuffle([...hanjaData]);
+                setQuestions(shuffled.slice(0, totalQ));
+                setGameState('play');
+                setScore(0);
+                setCurrentIndex(0);
+                setTimer(0);
+                setFeedback(null);
+                setTranscript("");
+                
+                timerRef.current = setInterval(() => {
+                    setTimer(t => t + 1);
+                }, 1000);
+            };
+
+            if (gameState === 'setup') {
+                return (
+                    <div className="flex flex-col items-center justify-center min-h-screen bg-violet-50 p-4">
+                        <div className="bg-white p-6 rounded-3xl shadow-xl w-full max-w-sm text-center">
+                            <h2 className="text-3xl font-jua text-violet-600 mb-6">말하기 연습 설정</h2>
+                            <label className="block text-gray-700 mb-2 font-bold">문제 개수 (1 ~ 62)</label>
+                            <input 
+                                type="number" 
+                                value={totalQ}
+                                onChange={(e) => {
+                                    let val = parseInt(e.target.value);
+                                    if(isNaN(val)) val = "";
+                                    else if(val > 62) val = 62;
+                                    else if(val < 1) val = 1;
+                                    setTotalQ(val);
+                                }}
+                                className="w-full text-center text-3xl border-2 border-violet-200 rounded-xl p-3 mb-6 focus:outline-none focus:border-violet-500"
+                            />
+                            <div className="flex gap-2">
+                                <button onClick={() => { SoundManager.click(); onBack(); }} className="flex-1 bg-gray-200 text-gray-600 font-jua py-3 rounded-xl hover:bg-gray-300">취소</button>
+                                <button onClick={handleStart} className="flex-1 bg-violet-500 text-white font-jua py-3 rounded-xl hover:bg-violet-600 shadow-md">시작!</button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (gameState === 'result') {
+                return (
+                    <div className="flex flex-col items-center justify-center min-h-screen bg-violet-50 p-4">
+                        <div className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-sm text-center pop-animation">
+                            <h2 className="text-4xl font-jua text-violet-600 mb-6">결과 발표!</h2>
+                            <div className="space-y-4 mb-8 text-lg">
+                                <div className="flex justify-between border-b pb-2">
+                                    <span className="text-gray-500">총 문제</span>
+                                    <span className="font-bold text-gray-800">{totalQ}개</span>
+                                </div>
+                                <div className="flex justify-between border-b pb-2">
+                                    <span className="text-green-600 font-bold">성공</span>
+                                    <span className="font-bold text-green-600">{score}개</span>
+                                </div>
+                                <div className="flex justify-between border-b pb-2">
+                                    <span className="text-red-500 font-bold">실패</span>
+                                    <span className="font-bold text-red-500">{totalQ - score}개</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-gray-500">소요 시간</span>
+                                    <span className="font-bold">{formatTime(timer)}</span>
+                                </div>
+                            </div>
+                            <button onClick={() => { SoundManager.click(); setGameState('setup'); }} className="w-full bg-violet-500 text-white font-jua py-4 rounded-xl text-xl shadow-lg hover:bg-violet-600">
+                                다시 하기
+                            </button>
+                            <button onClick={() => { SoundManager.click(); onBack(); }} className="mt-4 text-gray-500 hover:text-gray-700 underline">
+                                메인으로
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            const currentQ = questions[currentIndex];
+
+            return (
+                <div className="flex flex-col items-center justify-center min-h-screen bg-violet-50 p-4 pb-20">
+                    <div className="w-full max-w-md flex justify-between items-center mb-4">
+                        <button onClick={() => { clearInterval(timerRef.current); SoundManager.click(); onBack(); }} className="text-gray-500 font-bold bg-white px-3 py-1 rounded-lg">◀ 종료</button>
+                        <div className="font-mono text-lg bg-white px-3 py-1 rounded-lg shadow text-violet-600">
+                            ⏱️ {formatTime(timer)}
+                        </div>
+                    </div>
+
+                    <div className="w-full max-w-md mb-2 px-1">
+                        <span className="text-violet-800 font-bold text-lg">문제 {currentIndex + 1} / {totalQ}</span>
+                    </div>
+
+                    <div className="bg-white p-6 rounded-3xl shadow-xl w-full max-w-md text-center mb-6 relative border-4 border-violet-100 min-h-[250px] flex flex-col justify-center items-center">
+                        <h2 className="text-gray-400 text-sm absolute top-4">아래 버튼을 누르고 읽어보세요!</h2>
+                        <div className={`${getHanjaFontSize(currentQ.hanja)} font-bold text-gray-800 mt-2 mb-4`}>
+                            {currentQ.hanja}
+                        </div>
+                        
+                        {/* 피드백 영역 */}
+                        <div className="h-20 w-full flex items-center justify-center">
+                            {feedback === null && (
+                                <p className={`text-xl ${isListening ? 'text-violet-600 font-bold animate-pulse' : 'text-gray-400'}`}>
+                                    {isListening ? transcript : "..."}
+                                </p>
+                            )}
+                            {feedback === 'correct' && (
+                                <div className="text-green-600 font-bold text-2xl animate-bounce">
+                                    ⭕ 정답입니다! ({currentQ.hangul})
+                                </div>
+                            )}
+                            {feedback === 'wrong' && (
+                                <div className="flex flex-col items-center w-full animate-shake">
+                                    <div className="flex justify-around w-full mb-2">
+                                        <div className="bg-green-100 px-3 py-1 rounded-lg">
+                                            <span className="text-xs text-green-700 block">정답</span>
+                                            <span className="text-lg font-bold text-green-800">{currentQ.hangul}</span>
+                                        </div>
+                                        <div className="bg-red-100 px-3 py-1 rounded-lg">
+                                            <span className="text-xs text-red-700 block">내가 말한 것</span>
+                                            <span className="text-lg font-bold text-red-800">{transcript}</span>
+                                        </div>
+                                    </div>
+                                    <button onClick={nextQuestion} className="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm shadow-lg animate-pulse">
+                                        다음 문제로 ▶
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="w-full max-w-md flex justify-center">
+                        <button 
+                            onClick={startListening}
+                            disabled={isListening || feedback !== null}
+                            className={`
+                                w-24 h-24 rounded-full flex items-center justify-center shadow-2xl transition-all transform
+                                ${isListening ? 'bg-violet-600 scale-110 mic-pulse' : 'bg-violet-500 hover:bg-violet-600 active:scale-95'}
+                                ${feedback !== null ? 'opacity-50 cursor-not-allowed' : ''}
+                            `}
+                        >
+                            <span className="text-4xl">🎙️</span>
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
         const App = () => {
             const [mode, setMode] = useState('menu'); 
 
@@ -850,6 +1104,7 @@
                     {mode === 'flashcard' && <FlashcardGame onBack={() => setMode('menu')} />}
                     {mode === 'quiz' && <QuizGame onBack={() => setMode('menu')} />}
                     {mode === 'memory' && <MemoryGame onBack={() => setMode('menu')} />}
+                    {mode === 'speaking' && <SpeakingGame onBack={() => setMode('menu')} />}
                 </React.Fragment>
             );
         };
@@ -859,4 +1114,3 @@
     </script>
 </body>
 </html>
-
