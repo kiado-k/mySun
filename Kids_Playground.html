@@ -295,17 +295,19 @@
         };
 
         // ------------------------------------------------
-        // 2. 내 맘대로 계산기 (십의 자리 제한 및 알림창 기능 추가)
+        // 2. 내 맘대로 계산기
         // ------------------------------------------------
         const MathCalculator = ({ onBack }) => {
             const [equation, setEquation] = useState("");
             const [result, setResult] = useState(null);
             const [toastMsg, setToastMsg] = useState("");
-            const [maxDigits, setMaxDigits] = useState(2); // 신규: 자릿수 동적 설정
+            const [maxDigits, setMaxDigits] = useState(2); 
+            const toastTimerRef = useRef(null);
 
             const showToast = (msg) => {
                 setToastMsg(msg);
-                setTimeout(() => setToastMsg(""), 2000);
+                if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+                toastTimerRef.current = setTimeout(() => setToastMsg(""), 2000);
             };
 
             const handleInput = (val) => {
@@ -354,13 +356,11 @@
                 const currentSegment = parts[parts.length - 1];
 
                 if (/[0-9]/.test(val)) {
-                    // 숫자 입력 시: 선택된 자릿수를 넘어가면 경고
                     if (currentSegment.length >= maxDigits) {
                         showToast(`${maxDigits}자리까지만 쓸 수 있어요!`);
                         SoundManager.wrong();
                         return;
                     }
-                    // 전체 식이 너무 길어지는 것 방지 (예: 2자리+2자리 = 5글자)
                     if (equation.length >= maxDigits * 2 + 1) {
                         showToast("식이 너무 길어요!");
                         SoundManager.wrong();
@@ -368,7 +368,6 @@
                     }
                     setEquation(equation + val);
                 } else {
-                    // 기호 입력 시
                     if (equation === "" || ['+', '-'].includes(equation.slice(-1))) return;
                     if (equation.length >= maxDigits * 2) {
                         showToast("더 이상 기호를 쓸 수 없어요!");
@@ -389,7 +388,6 @@
 
             return (
                 <div className="flex flex-col items-center justify-center min-h-screen bg-orange-50 p-4 relative">
-                    {/* 토스트 메시지 (알림창) */}
                     {toastMsg && (
                         <div className="absolute top-[20%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-red-500 text-white font-jua px-6 py-4 rounded-full shadow-2xl z-50 whitespace-nowrap pop-animation border-4 border-red-300 text-xl">
                             🚨 {toastMsg}
@@ -401,7 +399,6 @@
                         <span className="font-jua text-lg text-orange-800 bg-orange-200 px-4 py-1 rounded-full">내 맘대로 계산기</span>
                     </div>
 
-                    {/* 신규: 자릿수 선택 콤보박스 */}
                     <div className="w-full max-w-sm flex items-center justify-end mb-2 px-2 gap-2">
                         <span className="text-sm font-bold text-orange-800">최대 자릿수:</span>
                         <select 
@@ -422,7 +419,6 @@
                     </div>
 
                     <div className="bg-white p-6 rounded-3xl shadow-xl w-full max-w-sm border-4 border-orange-200">
-                        {/* 화면 창 */}
                         <div className="bg-gray-100 rounded-2xl h-24 mb-6 p-4 flex flex-col items-end justify-center shadow-inner relative overflow-hidden">
                             <span className="text-4xl font-jua text-gray-500 tracking-widest">{equation || "0"}</span>
                             {result !== null && (
@@ -430,7 +426,6 @@
                             )}
                         </div>
 
-                        {/* 키패드 */}
                         <div className="grid grid-cols-3 gap-3">
                             {buttons.slice(0, 12).map((btn, idx) => (
                                 <button key={idx} onClick={() => handleInput(btn)}
@@ -792,7 +787,6 @@
             const initBlocks = useCallback(() => {
                 if (questions.length === 0 || gameState !== 'play') return;
                 
-                // 문제를 먼저 보여주고 블록은 약간의 지연 후에 생성
                 setBlocks([]);
                 setSuccess(false);
                 
@@ -824,7 +818,7 @@
                 initBlocks();
             }, [initBlocks]);
 
-            // 성공 체크 로직 (드래그 끝날 때마다 확인)
+            // 성공 체크 로직
             useEffect(() => {
                 if (blocks.length === 0 || draggingIdx !== null || success || gameState !== 'play') return;
                 const q = questions[currentIndex];
@@ -836,12 +830,10 @@
 
                 let isWin = false;
                 if (op === '+') {
-                    // 큰 바구니(y<=50) 안에 파랑 n1개, 녹색 n2개가 정확히 들어있는지 확인
                     const blueIn = blocks.filter(b => b.type === 'blue' && b.y <= 50).length;
                     const greenIn = blocks.filter(b => b.type === 'green' && b.y <= 50).length;
                     isWin = (blueIn === n1 && greenIn === n2);
                 } else {
-                    // 빼기 상자(y>50) 안으로 정확히 n2개가 빠져나갔는지 확인
                     const removedCount = blocks.filter(b => b.y > 50).length;
                     isWin = (removedCount === n2);
                 }
@@ -863,24 +855,29 @@
                 }
             };
 
-            // 드래그 앤 드롭 이벤트 핸들러
+            // Pointer Event 핸들러
             const handlePointerDown = (e, idx) => {
                 e.preventDefault();
                 e.stopPropagation();
                 if(success) return; 
                 setDraggingIdx(idx);
                 SoundManager.click();
+                
+                try {
+                    // 안정적인 드래그를 위해 Pointer 캡처
+                    if (playAreaRef.current) {
+                        playAreaRef.current.setPointerCapture(e.pointerId);
+                    }
+                } catch(err) {}
             };
 
             const handlePointerMove = (e) => {
                 if (draggingIdx === null) return;
                 e.preventDefault();
                 const area = playAreaRef.current.getBoundingClientRect();
-                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-
-                let x = ((clientX - area.left) / area.width) * 100;
-                let y = ((clientY - area.top) / area.height) * 100;
+                
+                let x = ((e.clientX - area.left) / area.width) * 100;
+                let y = ((e.clientY - area.top) / area.height) * 100;
                 
                 // 화면 이탈 방지
                 x = Math.max(5, Math.min(95, x));
@@ -893,8 +890,15 @@
                 });
             };
 
-            const handlePointerUp = () => {
-                if (draggingIdx !== null) setDraggingIdx(null);
+            const handlePointerUp = (e) => {
+                if (draggingIdx !== null) {
+                    setDraggingIdx(null);
+                    try {
+                        if (playAreaRef.current && e.pointerId) {
+                            playAreaRef.current.releasePointerCapture(e.pointerId);
+                        }
+                    } catch(err) {}
+                }
             };
 
             if (gameState === 'setup') {
@@ -967,10 +971,9 @@
                             className="w-full flex-1 bg-white rounded-2xl border-4 border-indigo-100 relative overflow-hidden"
                             onPointerMove={handlePointerMove}
                             onPointerUp={handlePointerUp}
-                            onPointerLeave={handlePointerUp}
-                            style={{ touchAction: 'none' }} // 모바일 화면 터치 시 스크롤 방지
+                            onPointerCancel={handlePointerUp}
+                            style={{ touchAction: 'none' }}
                         >
-                            {/* 위쪽 구역 (큰 바구니) */}
                             <div className={`absolute top-0 left-0 w-full h-1/2 flex flex-col items-center pt-4 border-b-4 border-dashed transition-colors
                                 ${op === '+' ? 'bg-amber-50 border-amber-200' : 'bg-blue-50 border-blue-200'}`}>
                                 <span className="text-xl sm:text-2xl font-jua text-gray-500 opacity-80">
@@ -981,7 +984,6 @@
                                 </span>
                             </div>
 
-                            {/* 아래쪽 구역 (소스 바닥 또는 빼기 상자) */}
                             <div className={`absolute bottom-0 left-0 w-full h-1/2 flex flex-col items-center pb-4 transition-colors
                                 ${op === '+' ? 'bg-slate-50' : 'bg-red-50'}`}>
                                 <div className="absolute top-4 w-full flex justify-around px-10">
@@ -999,7 +1001,6 @@
                                 )}
                             </div>
 
-                            {/* 성공 팝업창 */}
                             {success && (
                                 <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center pop-animation">
                                     <div className="text-7xl mb-4">🎉</div>
@@ -1010,7 +1011,6 @@
                                 </div>
                             )}
 
-                            {/* 움직이는 블록들 렌더링 */}
                             {blocks.map((b, idx) => (
                                 <div
                                     key={b.id}
@@ -1056,30 +1056,49 @@
 
             const colors = ['#000000', '#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#a855f7', '#ec4899'];
 
+            // 캔버스 크기 동기화 로직 강화
             const resizeCanvas = useCallback(() => {
                 const canvas = canvasRef.current;
                 const container = containerRef.current;
                 if (!canvas || !container) return;
 
-                const dpr = window.devicePixelRatio || 1;
                 const rect = container.getBoundingClientRect();
+                if (rect.width === 0 || rect.height === 0) return; // 화면이 덜 그려졌을 때 무시
+
+                const dpr = window.devicePixelRatio || 1;
                 
+                // 기존에 그린 내용을 유지하면서 리사이징
+                const ctx = canvas.getContext('2d');
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = canvas.width;
+                tempCanvas.height = canvas.height;
+                const tCtx = tempCanvas.getContext('2d');
+                tCtx.drawImage(canvas, 0, 0);
+
                 canvas.width = rect.width * dpr;
                 canvas.height = rect.height * dpr;
                 canvas.style.width = `${rect.width}px`;
                 canvas.style.height = `${rect.height}px`;
                 
-                const ctx = canvas.getContext('2d');
                 ctx.scale(dpr, dpr);
                 ctx.lineCap = 'round';
                 ctx.lineJoin = 'round';
                 ctx.lineWidth = 15; 
+
+                // 내용 복원
+                ctx.drawImage(tempCanvas, 0, 0, tempCanvas.width / dpr, tempCanvas.height / dpr);
             }, []);
 
             useEffect(() => {
                 resizeCanvas();
+                // 컴포넌트 마운트 직후 레이아웃이 확정되는 시간을 벌기 위해 한 번 더 호출 (초기화 버그 해결)
+                const timer = setTimeout(resizeCanvas, 150);
                 window.addEventListener('resize', resizeCanvas);
-                return () => window.removeEventListener('resize', resizeCanvas);
+                
+                return () => {
+                    window.removeEventListener('resize', resizeCanvas);
+                    clearTimeout(timer);
+                };
             }, [resizeCanvas]);
 
             useEffect(() => {
@@ -1100,22 +1119,32 @@
                 }
             }, []);
 
+            // Pointer Event 기반 좌표계
             const getCoords = (e) => {
                 const canvas = canvasRef.current;
                 const rect = canvas.getBoundingClientRect();
-                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-                return { x: clientX - rect.left, y: clientY - rect.top };
+                return { x: e.clientX - rect.left, y: e.clientY - rect.top };
             };
 
             const startDrawing = (e) => {
-                e.preventDefault();
+                try {
+                    // 터치가 끊기지 않게 캡처
+                    e.target.setPointerCapture(e.pointerId);
+                } catch(err) {}
+                
                 isDrawing.current = true;
-                lastPos.current = getCoords(e);
+                const coords = getCoords(e);
+                lastPos.current = coords;
+
+                // 터치하자마자 점이 찍히게 처리
+                const ctx = canvasRef.current.getContext('2d');
+                ctx.beginPath();
+                ctx.fillStyle = isRainbowMode ? `hsl(${Date.now() / 5 % 360}, 80%, 50%)` : brushColor;
+                ctx.arc(coords.x, coords.y, ctx.lineWidth / 2, 0, Math.PI * 2);
+                ctx.fill();
             };
 
             const draw = (e) => {
-                e.preventDefault();
                 if (!isDrawing.current) return;
                 
                 const canvas = canvasRef.current;
@@ -1131,7 +1160,13 @@
                 lastPos.current = coords;
             };
 
-            const stopDrawing = () => { isDrawing.current = false; };
+            const stopDrawing = (e) => {
+                isDrawing.current = false;
+                try {
+                    if (e && e.pointerId) e.target.releasePointerCapture(e.pointerId);
+                } catch(err) {}
+            };
+
             const clearCanvas = () => {
                 const canvas = canvasRef.current;
                 const ctx = canvas.getContext('2d');
@@ -1227,9 +1262,14 @@
                                 <div className="absolute inset-0 flex items-center justify-center z-0 pointer-events-none p-4 overflow-hidden">
                                     <span className="guide-text font-jua" style={{ fontSize: getFontSize(text) }}>{text}</span>
                                 </div>
-                                <canvas ref={canvasRef} className="absolute top-0 left-0 w-full h-full z-10"
-                                    onMouseDown={startDrawing} onMouseMove={draw} onMouseUp={stopDrawing} onMouseOut={stopDrawing}
-                                    onTouchStart={startDrawing} onTouchMove={draw} onTouchEnd={stopDrawing} onTouchCancel={stopDrawing}
+                                <canvas ref={canvasRef} 
+                                    className="absolute top-0 left-0 w-full h-full z-10"
+                                    style={{ touchAction: 'none' }}
+                                    onPointerDown={startDrawing} 
+                                    onPointerMove={draw} 
+                                    onPointerUp={stopDrawing} 
+                                    onPointerOut={stopDrawing}
+                                    onPointerCancel={stopDrawing}
                                 />
                             </div>
                         </div>
