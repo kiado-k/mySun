@@ -1,0 +1,1293 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>6살 숫자 & 한글 놀이터</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f0fdf4;
+            user-select: none;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        .font-jua {
+            font-family: 'Jua', sans-serif;
+        }
+        
+        /* 카드 애니메이션 */
+        .perspective-1000 { perspective: 1000px; }
+        .card-inner { transition: transform 0.6s; transform-style: preserve-3d; }
+        .flipped .card-inner { transform: rotateY(180deg); }
+        .card-front, .card-back {
+            position: absolute; width: 100%; height: 100%;
+            backface-visibility: hidden; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+        }
+        .card-back { transform: rotateY(180deg); }
+
+        /* 공통 애니메이션 */
+        .pop-animation { animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes pop { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+
+        .shake-animation { animation: shake 0.5s; }
+        @keyframes shake {
+            0% { transform: translateX(0); } 25% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); } 75% { transform: translateX(-5px); } 100% { transform: translateX(0); }
+        }
+
+        /* 무지개 한글 놀이터 전용 스타일 */
+        .notebook-bg {
+            background-color: #ffffff;
+            background-image: 
+                linear-gradient(#e5e7eb 2px, transparent 2px),
+                linear-gradient(90deg, #e5e7eb 2px, transparent 2px);
+            background-size: 50px 50px;
+        }
+
+        .guide-text {
+            -webkit-text-stroke: 3px #e5e7eb; 
+            text-shadow: 3px 3px 0px #fff;
+            display: inline-block;
+            width: 100%;
+            text-align: center;
+            line-height: 1.2;
+            color: transparent;
+            pointer-events: none;
+        }
+
+        .rainbow-btn {
+            background: linear-gradient(135deg, #ff0000, #ffff00, #00ff00, #0000ff, #ff00ff);
+            animation: bg-spin 3s linear infinite;
+        }
+
+        @keyframes bg-spin {
+            0% { filter: hue-rotate(0deg); }
+            100% { filter: hue-rotate(360deg); }
+        }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        canvas { cursor: crosshair; touch-action: none; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useCallback } = React;
+
+        // ------------------------------------------------
+        // 오디오 시스템 (상쾌한 효과음)
+        // ------------------------------------------------
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let globalAudioCtx = null;
+
+        const initAudio = () => {
+            if (!globalAudioCtx) globalAudioCtx = new AudioContext();
+            if (globalAudioCtx.state === 'suspended') globalAudioCtx.resume();
+            return globalAudioCtx;
+        };
+
+        const SoundManager = {
+            playTone: (freq, type, duration, vol = 0.3) => {
+                const ctx = initAudio();
+                if (!ctx) return;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc.type = type; 
+                osc.frequency.setValueAtTime(freq, ctx.currentTime);
+                
+                gain.gain.setValueAtTime(0, ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(vol, ctx.currentTime + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                
+                osc.start();
+                osc.stop(ctx.currentTime + duration);
+            },
+            click: () => SoundManager.playTone(880, 'sine', 0.1, 0.4),
+            flip: () => {
+                const ctx = initAudio();
+                if (!ctx) return;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.1);
+                
+                gain.gain.setValueAtTime(0, ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.2, ctx.currentTime + 0.02);
+                gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.15);
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.2);
+            },
+            correct: () => {
+                [1318.51, 1760.00, 2217.46].forEach((freq, i) => {
+                    setTimeout(() => SoundManager.playTone(freq, 'sine', 0.5, 0.4), i * 80);
+                });
+            },
+            wrong: () => {
+                const ctx = initAudio();
+                if (!ctx) return;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(300, ctx.currentTime);
+                osc.frequency.linearRampToValueAtTime(200, ctx.currentTime + 0.3);
+                
+                gain.gain.setValueAtTime(0, ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.05);
+                gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.3);
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.35);
+            },
+            win: () => {
+                const melody = [1318, 1318, 1318, 1760, 2217];
+                melody.forEach((freq, i) => {
+                    const dur = i === melody.length - 1 ? 0.8 : 0.2;
+                    setTimeout(() => SoundManager.playTone(freq, 'sine', dur, 0.5), i * 150);
+                });
+            }
+        };
+
+        // ------------------------------------------------
+        // 유틸리티
+        // ------------------------------------------------
+        const shuffle = (array) => {
+            let currentIndex = array.length, randomIndex;
+            while (currentIndex != 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        };
+
+        const generateQuestion = () => {
+            const isAdd = Math.random() > 0.5;
+            let n1, n2, ans;
+            if (isAdd) {
+                n1 = Math.floor(Math.random() * 9) + 1; // 1~9
+                n2 = Math.floor(Math.random() * (10 - n1)) + 1; // n1+n2 <= 10
+                ans = n1 + n2;
+                return { question: `${n1} + ${n2}`, answer: ans };
+            } else {
+                n1 = Math.floor(Math.random() * 9) + 2; // 2~10
+                n2 = Math.floor(Math.random() * (n1 - 1)) + 1; // n2 < n1
+                ans = n1 - n2;
+                return { question: `${n1} - ${n2}`, answer: ans };
+            }
+        };
+
+        // ------------------------------------------------
+        // BGM 플레이어 (메인 메뉴용)
+        // ------------------------------------------------
+        const BGMPlayer = ({ mode }) => {
+            const [isPlaying, setIsPlaying] = useState(false);
+            const audioRef = useRef(null);
+            
+            useEffect(() => {
+                const audio = new Audio("./suno_bgm.mp3");
+                audio.loop = true;
+                audio.volume = 0.2;
+                audioRef.current = audio;
+
+                return () => {
+                    if(audioRef.current) {
+                        audioRef.current.pause();
+                        audioRef.current = null;
+                    }
+                };
+            }, []);
+
+            const toggleBGM = () => {
+                if (!audioRef.current) return;
+                initAudio();
+                if (isPlaying) {
+                    audioRef.current.pause();
+                } else {
+                    const playPromise = audioRef.current.play();
+                    if (playPromise !== undefined) {
+                        playPromise.catch(() => console.log("BGM 재생 차단됨"));
+                    }
+                }
+                setIsPlaying(!isPlaying);
+            };
+
+            if (mode !== 'menu') return null;
+
+            return (
+                <div className="fixed top-4 right-4 z-50">
+                    <button 
+                        onClick={toggleBGM}
+                        className={`px-4 py-2 rounded-full shadow-xl transition-all transform hover:scale-105 active:scale-95 flex items-center gap-2 border-2 border-white
+                            ${isPlaying ? 'bg-amber-500 text-white' : 'bg-gray-400 text-gray-100'}`}
+                    >
+                        <span className="text-xl">{isPlaying ? "🔊" : "🔇"}</span>
+                        <span className="font-jua text-sm hidden sm:inline">{isPlaying ? "BGM 켜짐" : "BGM 꺼짐"}</span>
+                    </button>
+                </div>
+            );
+        };
+
+        // ------------------------------------------------
+        // 1. 메인 메뉴
+        // ------------------------------------------------
+        const MainMenu = ({ setMode }) => {
+            const handleModeChange = (mode) => {
+                SoundManager.click();
+                setMode(mode);
+            };
+
+            return (
+                <div className="flex flex-col items-center justify-center min-h-screen bg-amber-50 p-4 relative overflow-hidden" onClick={initAudio}>
+                    <div className="absolute top-0 left-0 w-64 h-64 bg-yellow-200 rounded-full mix-blend-multiply filter blur-3xl opacity-50"></div>
+                    <div className="absolute bottom-0 right-0 w-64 h-64 bg-pink-200 rounded-full mix-blend-multiply filter blur-3xl opacity-50"></div>
+
+                    <div className="z-10 text-center mb-6 mt-4">
+                        <div className="text-6xl mb-4 animate-bounce">👦🏻👧🏻</div>
+                        <h1 className="text-4xl md:text-5xl font-jua text-amber-600 mb-2 drop-shadow-md leading-tight">
+                            6살 쑥쑥<br />놀이터
+                        </h1>
+                        <p className="text-amber-700 text-lg font-bold mt-2 bg-white/50 inline-block px-4 py-1 rounded-full">숫자와 한글이랑 놀자!</p>
+                    </div>
+                    
+                    <div className="grid gap-3 w-full max-w-sm z-10 mb-8">
+                        {/* 한글 기능 */}
+                        <button onClick={() => handleModeChange('hangul')} className="bg-gradient-to-r from-pink-400 via-purple-400 to-indigo-400 text-white font-jua text-2xl py-4 rounded-3xl shadow-lg transition transform active:scale-95 border-4 border-white mb-2">
+                            🎨 무지개 한글 놀이터
+                        </button>
+
+                        {/* 숫자 기능들 */}
+                        <button onClick={() => handleModeChange('calculator')} className="bg-orange-400 hover:bg-orange-500 text-white font-jua text-2xl py-4 rounded-2xl shadow-md transition transform active:scale-95 flex items-center justify-center gap-2">
+                            <span>📱</span> 내 맘대로 계산기
+                        </button>
+                        <button onClick={() => handleModeChange('quiz')} className="bg-sky-400 hover:bg-sky-500 text-white font-jua text-2xl py-4 rounded-2xl shadow-md transition transform active:scale-95 flex items-center justify-center gap-2">
+                            <span>🎯</span> 척척 숫자 퀴즈
+                        </button>
+                        <button onClick={() => handleModeChange('memory')} className="bg-emerald-400 hover:bg-emerald-500 text-white font-jua text-2xl py-4 rounded-2xl shadow-md transition transform active:scale-95 flex items-center justify-center gap-2">
+                            <span>🧩</span> 숫자 짝 맞추기
+                        </button>
+                        <button onClick={() => handleModeChange('visual')} className="bg-indigo-400 hover:bg-indigo-500 text-white font-jua text-2xl py-4 rounded-2xl shadow-md transition transform active:scale-95 flex items-center justify-center gap-2">
+                            <span>🧱</span> 블록으로 배우는 숫자
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
+        // ------------------------------------------------
+        // 2. 내 맘대로 계산기 (십의 자리 제한 및 알림창 기능 추가)
+        // ------------------------------------------------
+        const MathCalculator = ({ onBack }) => {
+            const [equation, setEquation] = useState("");
+            const [result, setResult] = useState(null);
+            const [toastMsg, setToastMsg] = useState("");
+            const [maxDigits, setMaxDigits] = useState(2); // 신규: 자릿수 동적 설정
+
+            const showToast = (msg) => {
+                setToastMsg(msg);
+                setTimeout(() => setToastMsg(""), 2000);
+            };
+
+            const handleInput = (val) => {
+                SoundManager.click();
+                if (val === 'C') {
+                    setEquation("");
+                    setResult(null);
+                    return;
+                }
+
+                if (val === '=') {
+                    if (!equation || ['+', '-'].includes(equation.slice(-1))) return;
+                    try {
+                        let res = null;
+                        if (equation.includes('+')) {
+                            const parts = equation.split('+');
+                            res = parseInt(parts[0]) + parseInt(parts[1]);
+                        } else if (equation.includes('-')) {
+                            const parts = equation.split('-');
+                            res = parseInt(parts[0]) - parseInt(parts[1]);
+                        } else {
+                            res = parseInt(equation);
+                        }
+
+                        if (!isNaN(res)) {
+                            setResult(res);
+                            SoundManager.correct();
+                        }
+                    } catch (e) {
+                        setResult("?");
+                    }
+                    return;
+                }
+
+                if (result !== null) {
+                    if (['+', '-'].includes(val)) {
+                        setEquation(result + val);
+                    } else {
+                        setEquation(val);
+                    }
+                    setResult(null);
+                    return;
+                }
+
+                const parts = equation.split(/[\+\-]/);
+                const currentSegment = parts[parts.length - 1];
+
+                if (/[0-9]/.test(val)) {
+                    // 숫자 입력 시: 선택된 자릿수를 넘어가면 경고
+                    if (currentSegment.length >= maxDigits) {
+                        showToast(`${maxDigits}자리까지만 쓸 수 있어요!`);
+                        SoundManager.wrong();
+                        return;
+                    }
+                    // 전체 식이 너무 길어지는 것 방지 (예: 2자리+2자리 = 5글자)
+                    if (equation.length >= maxDigits * 2 + 1) {
+                        showToast("식이 너무 길어요!");
+                        SoundManager.wrong();
+                        return;
+                    }
+                    setEquation(equation + val);
+                } else {
+                    // 기호 입력 시
+                    if (equation === "" || ['+', '-'].includes(equation.slice(-1))) return;
+                    if (equation.length >= maxDigits * 2) {
+                        showToast("더 이상 기호를 쓸 수 없어요!");
+                        SoundManager.wrong();
+                        return;
+                    }
+                    setEquation(equation + val);
+                }
+            };
+
+            const buttons = [
+                '1', '2', '3',
+                '4', '5', '6',
+                '7', '8', '9',
+                'C', '0', '=',
+                '+', '-'
+            ];
+
+            return (
+                <div className="flex flex-col items-center justify-center min-h-screen bg-orange-50 p-4 relative">
+                    {/* 토스트 메시지 (알림창) */}
+                    {toastMsg && (
+                        <div className="absolute top-[20%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-red-500 text-white font-jua px-6 py-4 rounded-full shadow-2xl z-50 whitespace-nowrap pop-animation border-4 border-red-300 text-xl">
+                            🚨 {toastMsg}
+                        </div>
+                    )}
+
+                    <div className="w-full max-w-sm flex justify-between items-center mb-4">
+                        <button onClick={() => { SoundManager.click(); onBack(); }} className="text-gray-500 font-bold bg-white px-4 py-2 rounded-xl shadow-sm">◀ 나가기</button>
+                        <span className="font-jua text-lg text-orange-800 bg-orange-200 px-4 py-1 rounded-full">내 맘대로 계산기</span>
+                    </div>
+
+                    {/* 신규: 자릿수 선택 콤보박스 */}
+                    <div className="w-full max-w-sm flex items-center justify-end mb-2 px-2 gap-2">
+                        <span className="text-sm font-bold text-orange-800">최대 자릿수:</span>
+                        <select 
+                            value={maxDigits} 
+                            onChange={(e) => {
+                                SoundManager.click();
+                                setMaxDigits(Number(e.target.value));
+                                setEquation("");
+                                setResult(null);
+                            }}
+                            className="bg-white border-2 border-orange-300 text-orange-800 font-jua rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                        >
+                            <option value={1}>0~9</option>
+                            <option value={2}>0~99</option>
+                            <option value={3}>0~999</option>
+                            <option value={4}>0~9999</option>
+                        </select>
+                    </div>
+
+                    <div className="bg-white p-6 rounded-3xl shadow-xl w-full max-w-sm border-4 border-orange-200">
+                        {/* 화면 창 */}
+                        <div className="bg-gray-100 rounded-2xl h-24 mb-6 p-4 flex flex-col items-end justify-center shadow-inner relative overflow-hidden">
+                            <span className="text-4xl font-jua text-gray-500 tracking-widest">{equation || "0"}</span>
+                            {result !== null && (
+                                <span className="text-5xl font-jua text-orange-500 pop-animation mt-1">= {result}</span>
+                            )}
+                        </div>
+
+                        {/* 키패드 */}
+                        <div className="grid grid-cols-3 gap-3">
+                            {buttons.slice(0, 12).map((btn, idx) => (
+                                <button key={idx} onClick={() => handleInput(btn)}
+                                    className={`h-16 rounded-2xl font-jua text-3xl shadow-md active:scale-95 transition-transform flex items-center justify-center
+                                    ${btn === 'C' ? 'bg-red-100 text-red-500' : btn === '=' ? 'bg-orange-500 text-white' : 'bg-orange-50 text-orange-800 border-b-4 border-orange-200 hover:bg-orange-100'}`}>
+                                    {btn}
+                                </button>
+                            ))}
+                        </div>
+                        <div className="grid grid-cols-2 gap-3 mt-3">
+                            <button onClick={() => handleInput('+')} className="h-16 rounded-2xl font-jua text-4xl shadow-md active:scale-95 transition-transform bg-sky-100 text-sky-600 border-b-4 border-sky-200 hover:bg-sky-200">+</button>
+                            <button onClick={() => handleInput('-')} className="h-16 rounded-2xl font-jua text-4xl shadow-md active:scale-95 transition-transform bg-pink-100 text-pink-600 border-b-4 border-pink-200 hover:bg-pink-200">-</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // ------------------------------------------------
+        // 3. 척척 숫자 퀴즈
+        // ------------------------------------------------
+        const MathQuiz = ({ onBack }) => {
+            const [gameState, setGameState] = useState('setup'); 
+            const [totalQ, setTotalQ] = useState(10);
+            const [questions, setQuestions] = useState([]);
+            const [currentIndex, setCurrentIndex] = useState(0);
+            const [score, setScore] = useState(0);
+            const [feedback, setFeedback] = useState(null); 
+            const [shake, setShake] = useState(false);
+
+            const generateOptions = (correctAnswer) => {
+                const ans = parseInt(correctAnswer);
+                const opts = new Set([ans]);
+                
+                while(opts.size < 4) {
+                    let d = Math.floor(Math.random() * 12); 
+                    if (d !== ans) opts.add(d);
+                }
+                return shuffle(Array.from(opts));
+            };
+
+            const handleStart = () => {
+                SoundManager.click();
+                const quizSet = [];
+                for(let i=0; i<totalQ; i++) {
+                    const qData = generateQuestion();
+                    quizSet.push({
+                        question: qData,
+                        options: generateOptions(qData.answer)
+                    });
+                }
+                setQuestions(quizSet);
+                setGameState('play');
+                setScore(0);
+                setCurrentIndex(0);
+            };
+
+            const handleAnswer = (selectedAns) => {
+                if (feedback) return;
+                const currentQ = questions[currentIndex].question;
+                
+                if (selectedAns === currentQ.answer) {
+                    SoundManager.correct();
+                    setScore(prev => prev + 1);
+                    setFeedback('correct');
+                } else {
+                    SoundManager.wrong();
+                    setFeedback('wrong');
+                    setShake(true);
+                    setTimeout(() => setShake(false), 500);
+                }
+
+                setTimeout(() => {
+                    setFeedback(null);
+                    if (currentIndex < totalQ - 1) {
+                        setCurrentIndex(prev => prev + 1);
+                    } else {
+                        SoundManager.win();
+                        setGameState('result');
+                    }
+                }, 1000);
+            };
+
+            if (gameState === 'setup') {
+                return (
+                    <div className="flex flex-col items-center justify-center min-h-screen bg-sky-50 p-4">
+                        <div className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-sm text-center">
+                            <div className="text-5xl mb-4">🤔</div>
+                            <h2 className="text-3xl font-jua text-sky-600 mb-6">몇 문제 풀까요?</h2>
+                            <div className="flex justify-center gap-4 mb-8">
+                                {[5, 10, 20].map(num => (
+                                    <button key={num} onClick={() => setTotalQ(num)} 
+                                        className={`w-16 h-16 rounded-2xl font-jua text-2xl transition-all ${totalQ === num ? 'bg-sky-500 text-white shadow-lg scale-110' : 'bg-sky-100 text-sky-600'}`}>
+                                        {num}
+                                    </button>
+                                ))}
+                            </div>
+                            <div className="flex gap-3">
+                                <button onClick={() => { SoundManager.click(); onBack(); }} className="flex-1 bg-gray-200 text-gray-600 font-jua py-4 rounded-xl text-xl">취소</button>
+                                <button onClick={handleStart} className="flex-1 bg-sky-500 text-white font-jua py-4 rounded-xl text-xl shadow-md">시작!</button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (gameState === 'result') {
+                return (
+                    <div className="flex flex-col items-center justify-center min-h-screen bg-sky-50 p-4">
+                        <div className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-sm text-center pop-animation">
+                            <div className="text-6xl mb-4">🏆</div>
+                            <h2 className="text-4xl font-jua text-sky-600 mb-6">퀴즈 완료!</h2>
+                            <div className="text-2xl font-jua mb-8">
+                                <p className="text-gray-600 mb-2">{totalQ}문제 중에서...</p>
+                                <p className="text-5xl text-sky-500">{score}개 정답!</p>
+                            </div>
+                            <button onClick={() => { SoundManager.click(); setGameState('setup'); }} className="w-full bg-sky-500 text-white font-jua py-4 rounded-xl text-2xl shadow-lg mb-4">
+                                한 번 더 하기
+                            </button>
+                            <button onClick={() => { SoundManager.click(); onBack(); }} className="text-gray-500 font-bold underline p-2">
+                                메인으로
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            const currentData = questions[currentIndex];
+
+            return (
+                <div className="flex flex-col items-center justify-center min-h-screen bg-sky-50 p-4">
+                    <div className="w-full max-w-md flex justify-between items-center mb-6">
+                        <button onClick={() => { SoundManager.click(); onBack(); }} className="text-gray-500 font-bold bg-white px-4 py-2 rounded-xl shadow-sm">◀ 종료</button>
+                        <span className="text-sky-800 font-jua text-xl bg-sky-200 px-4 py-1 rounded-full">문제 {currentIndex + 1} / {totalQ}</span>
+                    </div>
+
+                    <div className={`bg-white p-8 rounded-3xl shadow-xl w-full max-w-md text-center mb-8 relative border-4 border-sky-200 min-h-[220px] flex flex-col justify-center items-center ${shake ? 'shake-animation' : ''}`}>
+                        <div className="text-6xl sm:text-7xl font-jua text-gray-800">
+                            {currentData.question.question} = ?
+                        </div>
+                        
+                        {feedback === 'correct' && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-green-100/90 rounded-2xl pop-animation z-10">
+                                <span className="text-8xl">⭕</span>
+                            </div>
+                        )}
+                        {feedback === 'wrong' && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-red-100/90 rounded-2xl pop-animation z-10">
+                                <div className="text-center">
+                                    <span className="text-8xl block mb-2">❌</span>
+                                    <span className="text-3xl font-jua text-red-600">정답: {currentData.question.answer}</span>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 w-full max-w-md">
+                        {currentData.options.map((opt, idx) => (
+                            <button
+                                key={idx}
+                                onClick={() => handleAnswer(opt)}
+                                disabled={!!feedback}
+                                className={`
+                                    py-6 rounded-2xl font-jua text-4xl shadow-md transition transform active:scale-95
+                                    ${feedback && opt === currentData.question.answer ? 'bg-green-500 text-white' : 'bg-white text-sky-600 border-b-4 border-sky-200 hover:bg-sky-50'}
+                                    ${feedback === 'wrong' && opt !== currentData.question.answer ? 'opacity-50' : ''}
+                                `}
+                            >
+                                {opt}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        // ------------------------------------------------
+        // 4. 숫자 짝 맞추기
+        // ------------------------------------------------
+        const MathMemory = ({ onBack }) => {
+            const [gameState, setGameState] = useState('setup');
+            const [pairCount, setPairCount] = useState(6);
+            const [cards, setCards] = useState([]);
+            const [flipped, setFlipped] = useState([]);
+            const [matched, setMatched] = useState([]);
+            const [isLocked, setIsLocked] = useState(false);
+
+            const generateUniquePairs = (count) => {
+                const pairs = [];
+                const usedAnswers = new Set();
+                let safetyCounter = 0;
+                
+                while (pairs.length < count && safetyCounter < 100) {
+                    const qData = generateQuestion();
+                    if (!usedAnswers.has(qData.answer)) {
+                        usedAnswers.add(qData.answer);
+                        pairs.push({ ...qData, id: pairs.length });
+                    }
+                    safetyCounter++;
+                }
+                return pairs;
+            };
+
+            const handleStart = () => {
+                SoundManager.click();
+                const uniqueQuestions = generateUniquePairs(pairCount);
+                const deck = [];
+                
+                uniqueQuestions.forEach((item) => {
+                    deck.push({ id: item.id, content: item.question, type: 'q', pairId: item.id });
+                    deck.push({ id: item.id, content: item.answer, type: 'a', pairId: item.id });
+                });
+                
+                setCards(shuffle(deck).map((card, idx) => ({ ...card, uniqueId: idx })));
+                setFlipped([]);
+                setMatched([]);
+                setIsLocked(false);
+                setGameState('play');
+            };
+
+            const handleCardClick = (index) => {
+                if (isLocked || flipped.includes(index) || matched.includes(cards[index].pairId)) return;
+
+                SoundManager.flip();
+                const newFlipped = [...flipped, index];
+                setFlipped(newFlipped);
+
+                if (newFlipped.length === 2) {
+                    setIsLocked(true);
+                    const card1 = cards[newFlipped[0]];
+                    const card2 = cards[newFlipped[1]];
+
+                    if (card1.pairId === card2.pairId) {
+                        setTimeout(() => SoundManager.correct(), 300);
+                        const newMatched = [...matched, card1.pairId];
+                        setMatched(newMatched);
+                        setFlipped([]);
+                        setIsLocked(false);
+
+                        if (newMatched.length === pairCount) {
+                            SoundManager.win();
+                            setTimeout(() => setGameState('result'), 500);
+                        }
+                    } else {
+                        setTimeout(() => SoundManager.wrong(), 500);
+                        setTimeout(() => {
+                            setFlipped([]);
+                            setIsLocked(false);
+                        }, 1000);
+                    }
+                }
+            };
+
+            if (gameState === 'setup' || gameState === 'result') {
+                return (
+                    <div className="flex flex-col items-center justify-center min-h-screen bg-emerald-50 p-4">
+                        <div className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-sm text-center pop-animation">
+                            <div className="text-6xl mb-4">{gameState === 'setup' ? '🧩' : '🎉'}</div>
+                            <h2 className="text-3xl font-jua text-emerald-600 mb-6">
+                                {gameState === 'setup' ? '짝 맞추기' : '모두 찾았어요!'}
+                            </h2>
+                            
+                            {gameState === 'setup' && (
+                                <div className="mb-8">
+                                    <p className="text-gray-600 mb-4 font-bold">카드 개수를 고르세요</p>
+                                    <div className="flex justify-center gap-3">
+                                        {[4, 6, 8].map(num => (
+                                            <button key={num} onClick={() => setPairCount(num)} 
+                                                className={`w-16 h-12 rounded-xl font-jua text-xl transition-all ${pairCount === num ? 'bg-emerald-500 text-white shadow-lg scale-110' : 'bg-emerald-100 text-emerald-600'}`}>
+                                                {num}쌍
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <p className="text-xs text-emerald-500 mt-3 font-bold">💡 정답이 서로 다른 카드로 나옵니다!</p>
+                                </div>
+                            )}
+
+                            <div className="flex gap-3">
+                                <button onClick={() => { SoundManager.click(); onBack(); }} className="flex-1 bg-gray-200 text-gray-600 font-jua py-4 rounded-xl text-xl hover:bg-gray-300">
+                                    {gameState === 'setup' ? '취소' : '메인으로'}
+                                </button>
+                                <button onClick={handleStart} className="flex-1 bg-emerald-500 text-white font-jua py-4 rounded-xl text-xl shadow-md hover:bg-emerald-600">
+                                    {gameState === 'setup' ? '시작!' : '다시 하기'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="flex flex-col items-center justify-center min-h-screen bg-emerald-50 p-4">
+                    <div className="w-full max-w-2xl flex justify-between items-center mb-6">
+                        <button onClick={() => { SoundManager.click(); onBack(); }} className="text-gray-500 font-bold bg-white px-4 py-2 rounded-xl shadow-sm">◀ 종료</button>
+                        <span className="font-jua text-emerald-700 text-xl bg-emerald-200 px-4 py-1 rounded-full">
+                            남은 짝: {pairCount - matched.length}
+                        </span>
+                    </div>
+
+                    <div className={`grid gap-3 w-full max-w-2xl ${pairCount >= 8 ? 'grid-cols-4' : 'grid-cols-3 sm:grid-cols-4'}`}>
+                        {cards.map((card, idx) => {
+                            const isFlippedCard = flipped.includes(idx) || matched.includes(card.pairId);
+                            const isMatchedCard = matched.includes(card.pairId);
+                            
+                            return (
+                                <div 
+                                    key={card.uniqueId}
+                                    onClick={() => handleCardClick(idx)}
+                                    className={`
+                                        aspect-[4/3] rounded-2xl flex items-center justify-center text-center cursor-pointer shadow-md transition-all duration-300
+                                        ${isFlippedCard ? 'bg-white rotate-y-180 border-2 border-emerald-200' : 'bg-emerald-400 border-b-4 border-emerald-500'}
+                                        ${isMatchedCard ? 'opacity-30 scale-95' : ''}
+                                    `}
+                                >
+                                    {isFlippedCard ? (
+                                        <span className={`font-jua ${card.type === 'q' ? 'text-2xl sm:text-3xl text-gray-700' : 'text-4xl sm:text-5xl text-emerald-600'}`}>
+                                            {card.content}
+                                        </span>
+                                    ) : (
+                                        <span className="text-3xl opacity-50 text-white drop-shadow">?</span>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            );
+        };
+
+        // ------------------------------------------------
+        // 5. 블록으로 배우는 숫자 (드래그 앤 드롭 시각화 게임)
+        // ------------------------------------------------
+        const VisualMath = ({ onBack }) => {
+            const [gameState, setGameState] = useState('setup');
+            const [totalQ, setTotalQ] = useState(5);
+            const [questions, setQuestions] = useState([]);
+            const [currentIndex, setCurrentIndex] = useState(0);
+
+            const [blocks, setBlocks] = useState([]);
+            const [draggingIdx, setDraggingIdx] = useState(null);
+            const [success, setSuccess] = useState(false);
+            const playAreaRef = useRef(null);
+
+            // 문제 세트 준비
+            const handleStart = () => {
+                SoundManager.click();
+                const quizSet = [];
+                for(let i=0; i<totalQ; i++) {
+                    quizSet.push(generateQuestion());
+                }
+                setQuestions(quizSet);
+                setGameState('play');
+                setCurrentIndex(0);
+                setSuccess(false);
+                setBlocks([]);
+            };
+
+            // 스테이지(문제)에 맞게 블록 세팅
+            const initBlocks = useCallback(() => {
+                if (questions.length === 0 || gameState !== 'play') return;
+                
+                // 문제를 먼저 보여주고 블록은 약간의 지연 후에 생성
+                setBlocks([]);
+                setSuccess(false);
+                
+                setTimeout(() => {
+                    const q = questions[currentIndex];
+                    const [n1Str, op] = q.question.split(' ');
+                    const n1 = parseInt(n1Str);
+                    
+                    const newBlocks = [];
+                    if (op === '+') {
+                        // 더하기: 밖(바닥, y: 60~90)에 파랑 10개, 녹색 10개 흩뿌리기
+                        for (let i = 0; i < 10; i++) {
+                            newBlocks.push({ id: `b-${i}`, type: 'blue', x: 10 + Math.random() * 30, y: 65 + Math.random() * 25 });
+                        }
+                        for (let i = 0; i < 10; i++) {
+                            newBlocks.push({ id: `g-${i}`, type: 'green', x: 60 + Math.random() * 30, y: 65 + Math.random() * 25 });
+                        }
+                    } else {
+                        // 빼기: 큰 바구니(y: 15~40)에 처음에 주어진 숫자만큼만 파랑색 블록 배치
+                        for (let i = 0; i < n1; i++) {
+                            newBlocks.push({ id: `b-${i}`, type: 'blue', x: 20 + Math.random() * 60, y: 15 + Math.random() * 25 });
+                        }
+                    }
+                    setBlocks(newBlocks);
+                }, 400); // 0.4초 후 블록 생성
+            }, [questions, currentIndex, gameState]);
+
+            useEffect(() => {
+                initBlocks();
+            }, [initBlocks]);
+
+            // 성공 체크 로직 (드래그 끝날 때마다 확인)
+            useEffect(() => {
+                if (blocks.length === 0 || draggingIdx !== null || success || gameState !== 'play') return;
+                const q = questions[currentIndex];
+                if (!q) return;
+                
+                const [n1Str, op, n2Str] = q.question.split(' ');
+                const n1 = parseInt(n1Str);
+                const n2 = parseInt(n2Str);
+
+                let isWin = false;
+                if (op === '+') {
+                    // 큰 바구니(y<=50) 안에 파랑 n1개, 녹색 n2개가 정확히 들어있는지 확인
+                    const blueIn = blocks.filter(b => b.type === 'blue' && b.y <= 50).length;
+                    const greenIn = blocks.filter(b => b.type === 'green' && b.y <= 50).length;
+                    isWin = (blueIn === n1 && greenIn === n2);
+                } else {
+                    // 빼기 상자(y>50) 안으로 정확히 n2개가 빠져나갔는지 확인
+                    const removedCount = blocks.filter(b => b.y > 50).length;
+                    isWin = (removedCount === n2);
+                }
+
+                if (isWin) {
+                    setSuccess(true);
+                    SoundManager.win();
+                }
+            }, [blocks, draggingIdx, success, questions, currentIndex, gameState]);
+
+            const handleNext = () => {
+                SoundManager.click();
+                if (currentIndex < totalQ - 1) {
+                    setSuccess(false);
+                    setBlocks([]);
+                    setCurrentIndex(prev => prev + 1);
+                } else {
+                    setGameState('result');
+                }
+            };
+
+            // 드래그 앤 드롭 이벤트 핸들러
+            const handlePointerDown = (e, idx) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if(success) return; 
+                setDraggingIdx(idx);
+                SoundManager.click();
+            };
+
+            const handlePointerMove = (e) => {
+                if (draggingIdx === null) return;
+                e.preventDefault();
+                const area = playAreaRef.current.getBoundingClientRect();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+                let x = ((clientX - area.left) / area.width) * 100;
+                let y = ((clientY - area.top) / area.height) * 100;
+                
+                // 화면 이탈 방지
+                x = Math.max(5, Math.min(95, x));
+                y = Math.max(5, Math.min(95, y));
+
+                setBlocks(prev => {
+                    const newBlocks = [...prev];
+                    newBlocks[draggingIdx] = { ...newBlocks[draggingIdx], x, y };
+                    return newBlocks;
+                });
+            };
+
+            const handlePointerUp = () => {
+                if (draggingIdx !== null) setDraggingIdx(null);
+            };
+
+            if (gameState === 'setup') {
+                return (
+                    <div className="flex flex-col items-center justify-center min-h-screen bg-indigo-50 p-4">
+                        <div className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-sm text-center">
+                            <div className="text-5xl mb-4">🧱</div>
+                            <h2 className="text-3xl font-jua text-indigo-600 mb-6">몇 문제 해볼까요?</h2>
+                            <div className="flex justify-center gap-4 mb-8">
+                                {[3, 5, 10].map(num => (
+                                    <button key={num} onClick={() => setTotalQ(num)} 
+                                        className={`w-16 h-16 rounded-2xl font-jua text-2xl transition-all ${totalQ === num ? 'bg-indigo-500 text-white shadow-lg scale-110' : 'bg-indigo-100 text-indigo-600'}`}>
+                                        {num}
+                                    </button>
+                                ))}
+                            </div>
+                            <div className="flex gap-3">
+                                <button onClick={() => { SoundManager.click(); onBack(); }} className="flex-1 bg-gray-200 text-gray-600 font-jua py-4 rounded-xl text-xl hover:bg-gray-300">취소</button>
+                                <button onClick={handleStart} className="flex-1 bg-indigo-500 text-white font-jua py-4 rounded-xl text-xl shadow-md hover:bg-indigo-600">시작!</button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (gameState === 'result') {
+                return (
+                    <div className="flex flex-col items-center justify-center min-h-screen bg-indigo-50 p-4">
+                        <div className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-sm text-center pop-animation">
+                            <div className="text-6xl mb-4">👑</div>
+                            <h2 className="text-4xl font-jua text-indigo-600 mb-6">참 잘했어요!</h2>
+                            <div className="text-2xl font-jua mb-8">
+                                <p className="text-gray-600 mb-2">총 {totalQ}문제를</p>
+                                <p className="text-4xl text-indigo-500">모두 맞췄어요!</p>
+                            </div>
+                            <button onClick={() => { SoundManager.click(); setGameState('setup'); }} className="w-full bg-indigo-500 text-white font-jua py-4 rounded-xl text-2xl shadow-lg mb-4 hover:bg-indigo-600">
+                                한 번 더 하기
+                            </button>
+                            <button onClick={() => { SoundManager.click(); onBack(); }} className="text-gray-500 font-bold underline p-2">
+                                메인으로
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            const currentQ = questions[currentIndex];
+            const [n1, op, n2] = currentQ ? currentQ.question.split(' ') : ['', '', ''];
+
+            return (
+                <div className="flex flex-col items-center justify-center min-h-screen bg-indigo-50 p-4">
+                    <div className="w-full max-w-2xl flex justify-between items-center mb-4">
+                        <button onClick={() => { SoundManager.click(); onBack(); }} className="text-gray-500 font-bold bg-white px-4 py-2 rounded-xl shadow-sm">◀ 종료</button>
+                        <span className="font-jua text-lg text-indigo-800 bg-indigo-200 px-4 py-1 rounded-full">블록 놀이 {currentIndex + 1} / {totalQ}</span>
+                    </div>
+
+                    <div className="bg-white p-4 sm:p-6 rounded-3xl shadow-xl w-full max-w-2xl border-4 border-indigo-200 text-center flex flex-col h-[75vh]">
+                        {/* 수식 표시창 (문제) */}
+                        <div className="flex items-center justify-center gap-3 sm:gap-6 mb-4 text-4xl sm:text-5xl font-jua shrink-0">
+                            <span className="text-blue-500">{n1}</span>
+                            <span className="text-gray-600">{op}</span>
+                            <span className={op === '+' ? 'text-green-500' : 'text-red-500'}>{n2}</span>
+                            <span className="text-gray-400">=</span>
+                            <span className="text-5xl sm:text-6xl text-indigo-600">{success ? currentQ.answer : '?'}</span>
+                        </div>
+
+                        {/* 드래그 앤 드롭 놀이 영역 */}
+                        <div 
+                            ref={playAreaRef}
+                            className="w-full flex-1 bg-white rounded-2xl border-4 border-indigo-100 relative overflow-hidden"
+                            onPointerMove={handlePointerMove}
+                            onPointerUp={handlePointerUp}
+                            onPointerLeave={handlePointerUp}
+                            style={{ touchAction: 'none' }} // 모바일 화면 터치 시 스크롤 방지
+                        >
+                            {/* 위쪽 구역 (큰 바구니) */}
+                            <div className={`absolute top-0 left-0 w-full h-1/2 flex flex-col items-center pt-4 border-b-4 border-dashed transition-colors
+                                ${op === '+' ? 'bg-amber-50 border-amber-200' : 'bg-blue-50 border-blue-200'}`}>
+                                <span className="text-xl sm:text-2xl font-jua text-gray-500 opacity-80">
+                                    큰 바구니
+                                </span>
+                                <span className="text-sm font-jua text-gray-400">
+                                    {op === '+' ? `파랑 ${n1}개, 녹색 ${n2}개를 넣어주세요!` : `여기에 파랑 블록이 ${n1}개 있어요`}
+                                </span>
+                            </div>
+
+                            {/* 아래쪽 구역 (소스 바닥 또는 빼기 상자) */}
+                            <div className={`absolute bottom-0 left-0 w-full h-1/2 flex flex-col items-center pb-4 transition-colors
+                                ${op === '+' ? 'bg-slate-50' : 'bg-red-50'}`}>
+                                <div className="absolute top-4 w-full flex justify-around px-10">
+                                    {op === '+' && <span className="text-xl font-jua text-blue-400 opacity-70">파란 블록</span>}
+                                    {op === '+' && <span className="text-xl font-jua text-green-400 opacity-70">녹색 블록</span>}
+                                </div>
+                                {op === '-' && (
+                                    <div className="absolute top-4 w-full text-center">
+                                        <span className="text-xl sm:text-2xl font-jua text-red-500 opacity-80">빼기 상자</span>
+                                        <br />
+                                        <span className="text-sm font-jua text-gray-500">
+                                            여기로 블록 {n2}개를 빼주세요!
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* 성공 팝업창 */}
+                            {success && (
+                                <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center pop-animation">
+                                    <div className="text-7xl mb-4">🎉</div>
+                                    <div className="text-5xl font-jua text-indigo-500 drop-shadow-md mb-6">정답은 {currentQ.answer}!</div>
+                                    <button onClick={handleNext} className="bg-indigo-500 text-white font-jua text-2xl px-8 py-4 rounded-full shadow-lg hover:bg-indigo-600 active:scale-95 animate-bounce">
+                                        다음 문제 ▶
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* 움직이는 블록들 렌더링 */}
+                            {blocks.map((b, idx) => (
+                                <div
+                                    key={b.id}
+                                    onPointerDown={(e) => handlePointerDown(e, idx)}
+                                    style={{
+                                        position: 'absolute',
+                                        left: `${b.x}%`,
+                                        top: `${b.y}%`,
+                                        transform: 'translate(-50%, -50%)',
+                                        touchAction: 'none',
+                                        transition: draggingIdx === idx ? 'none' : 'all 0.3s ease-out'
+                                    }}
+                                    className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl shadow-md border-b-4 flex items-center justify-center text-white text-xl
+                                        ${draggingIdx === idx ? 'scale-125 z-40 shadow-xl cursor-grabbing' : 'z-10 cursor-grab'}
+                                        ${b.type === 'blue' ? 'bg-blue-400 border-blue-500' : 'bg-green-400 border-green-500'}`}
+                                >
+                                    {b.type === 'blue' ? '🧊' : '🍏'}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // ------------------------------------------------
+        // 6. 무지개 한글 놀이터 (캔버스 드로잉)
+        // ------------------------------------------------
+        const HangulPlayground = ({ onBack }) => {
+            const canvasRef = useRef(null);
+            const containerRef = useRef(null);
+            const [text, setText] = useState("가나다라");
+            const [brushColor, setBrushColor] = useState("#000000");
+            const [isRainbowMode, setIsRainbowMode] = useState(false);
+            const [isListening, setIsListening] = useState(false);
+            const [isSpeaking, setIsSpeaking] = useState(false);
+            const [showModal, setShowModal] = useState(false);
+            const [inputText, setInputText] = useState("");
+            
+            const isDrawing = useRef(false);
+            const lastPos = useRef({ x: 0, y: 0 });
+            const recognitionRef = useRef(null);
+
+            const colors = ['#000000', '#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#a855f7', '#ec4899'];
+
+            const resizeCanvas = useCallback(() => {
+                const canvas = canvasRef.current;
+                const container = containerRef.current;
+                if (!canvas || !container) return;
+
+                const dpr = window.devicePixelRatio || 1;
+                const rect = container.getBoundingClientRect();
+                
+                canvas.width = rect.width * dpr;
+                canvas.height = rect.height * dpr;
+                canvas.style.width = `${rect.width}px`;
+                canvas.style.height = `${rect.height}px`;
+                
+                const ctx = canvas.getContext('2d');
+                ctx.scale(dpr, dpr);
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.lineWidth = 15; 
+            }, []);
+
+            useEffect(() => {
+                resizeCanvas();
+                window.addEventListener('resize', resizeCanvas);
+                return () => window.removeEventListener('resize', resizeCanvas);
+            }, [resizeCanvas]);
+
+            useEffect(() => {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                if (SpeechRecognition) {
+                    const recognition = new SpeechRecognition();
+                    recognition.continuous = false;
+                    recognition.lang = 'ko-KR';
+                    recognition.onresult = (e) => {
+                        const result = e.results[0][0].transcript;
+                        setText(result.trim());
+                        clearCanvas();
+                        setIsListening(false);
+                    };
+                    recognition.onend = () => setIsListening(false);
+                    recognition.onerror = () => setIsListening(false);
+                    recognitionRef.current = recognition;
+                }
+            }, []);
+
+            const getCoords = (e) => {
+                const canvas = canvasRef.current;
+                const rect = canvas.getBoundingClientRect();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                return { x: clientX - rect.left, y: clientY - rect.top };
+            };
+
+            const startDrawing = (e) => {
+                e.preventDefault();
+                isDrawing.current = true;
+                lastPos.current = getCoords(e);
+            };
+
+            const draw = (e) => {
+                e.preventDefault();
+                if (!isDrawing.current) return;
+                
+                const canvas = canvasRef.current;
+                const ctx = canvas.getContext('2d');
+                const coords = getCoords(e);
+
+                ctx.beginPath();
+                ctx.strokeStyle = isRainbowMode ? `hsl(${Date.now() / 5 % 360}, 80%, 50%)` : brushColor;
+                ctx.moveTo(lastPos.current.x, lastPos.current.y);
+                ctx.lineTo(coords.x, coords.y);
+                ctx.stroke();
+                
+                lastPos.current = coords;
+            };
+
+            const stopDrawing = () => { isDrawing.current = false; };
+            const clearCanvas = () => {
+                const canvas = canvasRef.current;
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            };
+
+            const toggleMic = () => {
+                if (!recognitionRef.current) { alert('음성 인식을 지원하지 않는 브라우저입니다.'); return; }
+                if (isListening) {
+                    recognitionRef.current.stop();
+                } else {
+                    try { recognitionRef.current.start(); setIsListening(true); } 
+                    catch(e) { console.log(e); }
+                }
+            };
+
+            const speakText = () => {
+                if (!window.speechSynthesis || !text) return;
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'ko-KR';
+                utterance.rate = 0.8;
+                utterance.onstart = () => setIsSpeaking(true);
+                utterance.onend = () => setIsSpeaking(false);
+                window.speechSynthesis.speak(utterance);
+            };
+
+            const handleTextSubmit = (e) => {
+                e.preventDefault();
+                if (inputText.trim()) {
+                    setText(inputText.trim());
+                    clearCanvas();
+                    setShowModal(false);
+                    setInputText("");
+                }
+            };
+
+            const getFontSize = (txt) => {
+                const len = txt.length || 1;
+                if (len <= 2) return 'clamp(6rem, 30vw, 15rem)'; 
+                if (len <= 5) return 'clamp(4rem, 20vw, 10rem)';
+                if (len <= 10) return 'clamp(2.5rem, 12vw, 6rem)';
+                return 'clamp(1.5rem, 8vw, 4rem)';
+            };
+
+            return (
+                <div className="flex flex-col items-center min-h-screen bg-pink-50 p-2 sm:p-4 fixed inset-0 w-full">
+                    <div className="w-full max-w-5xl flex justify-between items-center mb-2 px-2">
+                        <button onClick={() => { SoundManager.click(); onBack(); }} className="text-pink-600 font-bold bg-white px-4 py-2 rounded-xl shadow-sm border-2 border-pink-100">
+                            ◀ 뒤로가기
+                        </button>
+                        <h1 className="text-xl sm:text-2xl font-jua text-pink-500">🎨 무지개 한글 놀이터</h1>
+                    </div>
+
+                    <div className="w-full max-w-5xl flex flex-col gap-2 mb-2">
+                        <div className="grid grid-cols-4 gap-2 w-full">
+                            <button onClick={toggleMic} className={`py-3 rounded-2xl border-2 shadow-sm flex flex-col items-center justify-center transition-all ${isListening ? 'bg-red-100 border-red-400 text-red-600 animate-pulse' : 'bg-white border-pink-100 text-pink-400'}`}>
+                                <span className="text-2xl mb-1">🎤</span>
+                                <span className="text-[11px] sm:text-xs font-bold">말하기</span>
+                            </button>
+                            <button onClick={() => setShowModal(true)} className="py-3 rounded-2xl border-2 bg-white border-purple-100 text-purple-400 flex flex-col items-center justify-center shadow-sm active:scale-95">
+                                <span className="text-2xl mb-1">⌨️</span>
+                                <span className="text-[11px] sm:text-xs font-bold">글씨입력</span>
+                            </button>
+                            <button onClick={speakText} className={`py-3 rounded-2xl border-2 shadow-sm flex flex-col items-center justify-center transition-all ${isSpeaking ? 'bg-blue-100 border-blue-400 text-blue-600 animate-bounce' : 'bg-white border-blue-100 text-blue-400'}`}>
+                                <span className="text-2xl mb-1">🔊</span>
+                                <span className="text-[11px] sm:text-xs font-bold">읽어주기</span>
+                            </button>
+                            <button onClick={clearCanvas} className="py-3 rounded-2xl border-2 bg-white border-orange-100 text-orange-400 flex flex-col items-center justify-center shadow-sm active:scale-95">
+                                <span className="text-2xl mb-1">🧹</span>
+                                <span className="text-[11px] sm:text-xs font-bold">지우기</span>
+                            </button>
+                        </div>
+
+                        <div className="bg-white rounded-2xl border-2 border-pink-200 p-2 flex items-center justify-center shadow-sm w-full">
+                            <div className="flex gap-2 sm:gap-4 overflow-x-auto no-scrollbar py-2 px-1">
+                                {colors.map(color => (
+                                    <button key={color} onClick={() => { setBrushColor(color); setIsRainbowMode(false); }}
+                                        className={`w-10 h-10 rounded-full border-2 shrink-0 transition-transform ${!isRainbowMode && brushColor === color ? 'border-gray-800 scale-110 shadow-md' : 'border-transparent'}`}
+                                        style={{ backgroundColor: color }} />
+                                ))}
+                                <button onClick={() => setIsRainbowMode(true)}
+                                    className={`w-10 h-10 rounded-full border-2 shrink-0 flex items-center justify-center rainbow-btn transition-transform ${isRainbowMode ? 'border-gray-800 scale-110 shadow-md' : 'border-transparent'}`}>
+                                    <span className="text-white text-lg drop-shadow">✨</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex-1 w-full max-w-5xl min-h-0 relative">
+                        <div ref={containerRef} className="w-full h-full bg-white rounded-3xl border-4 border-pink-300 overflow-hidden shadow-xl relative">
+                            <div className="notebook-bg w-full h-full relative flex items-center justify-center p-4">
+                                <div className="absolute inset-0 flex items-center justify-center z-0 pointer-events-none p-4 overflow-hidden">
+                                    <span className="guide-text font-jua" style={{ fontSize: getFontSize(text) }}>{text}</span>
+                                </div>
+                                <canvas ref={canvasRef} className="absolute top-0 left-0 w-full h-full z-10"
+                                    onMouseDown={startDrawing} onMouseMove={draw} onMouseUp={stopDrawing} onMouseOut={stopDrawing}
+                                    onTouchStart={startDrawing} onTouchMove={draw} onTouchEnd={stopDrawing} onTouchCancel={stopDrawing}
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {showModal && (
+                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
+                            <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl pop-animation">
+                                <div className="flex justify-between items-center mb-6">
+                                    <h3 className="text-2xl font-jua text-gray-800">어떤 글씨를 써볼까요?</h3>
+                                    <button onClick={() => setShowModal(false)} className="text-gray-400 text-2xl font-bold">X</button>
+                                </div>
+                                <form onSubmit={handleTextSubmit}>
+                                    <input type="text" autoFocus value={inputText} onChange={e => setInputText(e.target.value)}
+                                        className="w-full border-b-4 border-pink-300 rounded-none p-3 text-3xl font-jua text-center mb-6 focus:outline-none focus:border-pink-500 bg-pink-50"
+                                        placeholder="글자를 적어주세요" />
+                                    <button type="submit" className="w-full bg-pink-500 text-white rounded-2xl py-4 text-2xl font-jua shadow-lg active:scale-95 transition-all">
+                                        확인
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // ------------------------------------------------
+        // 메인 App 통합
+        // ------------------------------------------------
+        const App = () => {
+            const [mode, setMode] = useState('menu'); 
+
+            useEffect(() => {
+                const enableAudio = () => initAudio();
+                window.addEventListener('click', enableAudio, { once: true });
+                window.addEventListener('touchstart', enableAudio, { once: true });
+                return () => {
+                    window.removeEventListener('click', enableAudio);
+                    window.removeEventListener('touchstart', enableAudio);
+                };
+            }, []);
+
+            return (
+                <React.Fragment>
+                    <BGMPlayer mode={mode} />
+                    {mode === 'menu' && <MainMenu setMode={setMode} />}
+                    {mode === 'calculator' && <MathCalculator onBack={() => setMode('menu')} />}
+                    {mode === 'quiz' && <MathQuiz onBack={() => setMode('menu')} />}
+                    {mode === 'memory' && <MathMemory onBack={() => setMode('menu')} />}
+                    {mode === 'visual' && <VisualMath onBack={() => setMode('menu')} />}
+                    {mode === 'hangul' && <HangulPlayground onBack={() => setMode('menu')} />}
+                </React.Fragment>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
