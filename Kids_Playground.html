@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>6살 숫자 & 한글 놀이터</title>
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
@@ -10,13 +10,15 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body {
+        body, html {
             font-family: 'Noto Sans KR', sans-serif;
             background-color: #f0fdf4;
             user-select: none;
-            overflow-x: hidden;
+            overflow: hidden; /* 전체 화면 스크롤 완전 차단 */
             -webkit-tap-highlight-color: transparent;
-            touch-action: manipulation;
+            touch-action: none; /* 브라우저 기본 제스처 차단 */
+            width: 100%;
+            height: 100%;
         }
         .font-jua {
             font-family: 'Jua', sans-serif;
@@ -80,13 +82,13 @@
     </style>
 </head>
 <body>
-    <div id="root"></div>
+    <div id="root" class="w-full h-full"></div>
 
     <script type="text/babel">
         const { useState, useEffect, useRef, useCallback } = React;
 
         // ------------------------------------------------
-        // 오디오 시스템 (상쾌한 효과음)
+        // 오디오 시스템
         // ------------------------------------------------
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         let globalAudioCtx = null;
@@ -168,9 +170,6 @@
             }
         };
 
-        // ------------------------------------------------
-        // 유틸리티
-        // ------------------------------------------------
         const shuffle = (array) => {
             let currentIndex = array.length, randomIndex;
             while (currentIndex != 0) {
@@ -238,11 +237,11 @@
                 <div className="fixed top-4 right-4 z-50">
                     <button 
                         onClick={toggleBGM}
-                        className={`px-4 py-2 rounded-full shadow-xl transition-all transform hover:scale-105 active:scale-95 flex items-center gap-2 border-2 border-white
+                        className={`px-3 py-2 sm:px-4 sm:py-2 rounded-full shadow-xl transition-all transform hover:scale-105 active:scale-95 flex items-center gap-2 border-2 border-white
                             ${isPlaying ? 'bg-amber-500 text-white' : 'bg-gray-400 text-gray-100'}`}
                     >
-                        <span className="text-xl">{isPlaying ? "🔊" : "🔇"}</span>
-                        <span className="font-jua text-sm hidden sm:inline">{isPlaying ? "BGM 켜짐" : "BGM 꺼짐"}</span>
+                        <span className="text-lg sm:text-xl">{isPlaying ? "🔊" : "🔇"}</span>
+                        <span className="font-jua text-xs sm:text-sm">{isPlaying ? "BGM 켜짐" : "BGM 꺼짐"}</span>
                     </button>
                 </div>
             );
@@ -258,35 +257,32 @@
             };
 
             return (
-                <div className="flex flex-col items-center justify-center min-h-screen bg-amber-50 p-4 relative overflow-hidden" onClick={initAudio}>
-                    <div className="absolute top-0 left-0 w-64 h-64 bg-yellow-200 rounded-full mix-blend-multiply filter blur-3xl opacity-50"></div>
-                    <div className="absolute bottom-0 right-0 w-64 h-64 bg-pink-200 rounded-full mix-blend-multiply filter blur-3xl opacity-50"></div>
+                <div className="fixed inset-0 w-full h-full flex flex-col items-center justify-center bg-amber-50 p-4 overflow-hidden" onClick={initAudio}>
+                    <div className="absolute top-0 left-0 w-64 h-64 bg-yellow-200 rounded-full mix-blend-multiply filter blur-3xl opacity-50 pointer-events-none"></div>
+                    <div className="absolute bottom-0 right-0 w-64 h-64 bg-pink-200 rounded-full mix-blend-multiply filter blur-3xl opacity-50 pointer-events-none"></div>
 
-                    <div className="z-10 text-center mb-6 mt-4">
-                        <div className="text-6xl mb-4 animate-bounce">👦🏻👧🏻</div>
-                        <h1 className="text-4xl md:text-5xl font-jua text-amber-600 mb-2 drop-shadow-md leading-tight">
-                            6살 쑥쑥<br />놀이터
+                    <div className="z-10 text-center mb-4 sm:mb-6 flex flex-col items-center justify-center shrink-0">
+                        <div className="text-5xl sm:text-6xl mb-2 sm:mb-4 animate-bounce">👦🏻👧🏻</div>
+                        <h1 className="text-3xl sm:text-4xl md:text-5xl font-jua text-amber-600 mb-1 sm:mb-2 drop-shadow-md leading-tight whitespace-nowrap">
+                            6살 쑥쑥 놀이터
                         </h1>
-                        <p className="text-amber-700 text-lg font-bold mt-2 bg-white/50 inline-block px-4 py-1 rounded-full">숫자와 한글이랑 놀자!</p>
+                        <p className="text-amber-700 text-sm sm:text-lg font-bold bg-white/50 inline-block px-3 py-1 rounded-full whitespace-nowrap">숫자와 한글이랑 놀자!</p>
                     </div>
                     
-                    <div className="grid gap-3 w-full max-w-sm z-10 mb-8">
-                        {/* 한글 기능 */}
-                        <button onClick={() => handleModeChange('hangul')} className="bg-gradient-to-r from-pink-400 via-purple-400 to-indigo-400 text-white font-jua text-2xl py-4 rounded-3xl shadow-lg transition transform active:scale-95 border-4 border-white mb-2">
+                    <div className="grid gap-2 sm:gap-3 w-full max-w-sm z-10 flex-1 min-h-0 max-h-[400px] content-center">
+                        <button onClick={() => handleModeChange('hangul')} className="bg-gradient-to-r from-pink-400 via-purple-400 to-indigo-400 text-white font-jua text-xl sm:text-2xl py-3 sm:py-4 rounded-2xl sm:rounded-3xl shadow-lg transition transform active:scale-95 border-2 sm:border-4 border-white mb-1">
                             🎨 무지개 한글 놀이터
                         </button>
-
-                        {/* 숫자 기능들 */}
-                        <button onClick={() => handleModeChange('calculator')} className="bg-orange-400 hover:bg-orange-500 text-white font-jua text-2xl py-4 rounded-2xl shadow-md transition transform active:scale-95 flex items-center justify-center gap-2">
+                        <button onClick={() => handleModeChange('calculator')} className="bg-orange-400 hover:bg-orange-500 text-white font-jua text-xl sm:text-2xl py-3 sm:py-4 rounded-xl sm:rounded-2xl shadow-md transition transform active:scale-95 flex items-center justify-center gap-2">
                             <span>📱</span> 내 맘대로 계산기
                         </button>
-                        <button onClick={() => handleModeChange('quiz')} className="bg-sky-400 hover:bg-sky-500 text-white font-jua text-2xl py-4 rounded-2xl shadow-md transition transform active:scale-95 flex items-center justify-center gap-2">
+                        <button onClick={() => handleModeChange('quiz')} className="bg-sky-400 hover:bg-sky-500 text-white font-jua text-xl sm:text-2xl py-3 sm:py-4 rounded-xl sm:rounded-2xl shadow-md transition transform active:scale-95 flex items-center justify-center gap-2">
                             <span>🎯</span> 척척 숫자 퀴즈
                         </button>
-                        <button onClick={() => handleModeChange('memory')} className="bg-emerald-400 hover:bg-emerald-500 text-white font-jua text-2xl py-4 rounded-2xl shadow-md transition transform active:scale-95 flex items-center justify-center gap-2">
+                        <button onClick={() => handleModeChange('memory')} className="bg-emerald-400 hover:bg-emerald-500 text-white font-jua text-xl sm:text-2xl py-3 sm:py-4 rounded-xl sm:rounded-2xl shadow-md transition transform active:scale-95 flex items-center justify-center gap-2">
                             <span>🧩</span> 숫자 짝 맞추기
                         </button>
-                        <button onClick={() => handleModeChange('visual')} className="bg-indigo-400 hover:bg-indigo-500 text-white font-jua text-2xl py-4 rounded-2xl shadow-md transition transform active:scale-95 flex items-center justify-center gap-2">
+                        <button onClick={() => handleModeChange('visual')} className="bg-indigo-400 hover:bg-indigo-500 text-white font-jua text-xl sm:text-2xl py-3 sm:py-4 rounded-xl sm:rounded-2xl shadow-md transition transform active:scale-95 flex items-center justify-center gap-2">
                             <span>🧱</span> 블록으로 배우는 숫자
                         </button>
                     </div>
@@ -387,20 +383,23 @@
             ];
 
             return (
-                <div className="flex flex-col items-center justify-center min-h-screen bg-orange-50 p-4 relative">
+                <div className="fixed inset-0 w-full h-full flex flex-col items-center justify-center bg-orange-50 p-2 sm:p-4 overflow-hidden relative">
+                    {/* 토스트 메시지 래퍼: 애니메이션과 위치 지정 분리로 오류 방지 */}
                     {toastMsg && (
-                        <div className="absolute top-[20%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-red-500 text-white font-jua px-6 py-4 rounded-full shadow-2xl z-50 whitespace-nowrap pop-animation border-4 border-red-300 text-xl">
-                            🚨 {toastMsg}
+                        <div className="absolute inset-0 z-[100] flex items-center justify-center pointer-events-none p-4">
+                            <div className="bg-red-500 text-white font-jua px-4 py-3 sm:px-6 sm:py-4 rounded-full shadow-2xl pop-animation border-4 border-red-300 text-lg sm:text-xl text-center whitespace-nowrap">
+                                🚨 {toastMsg}
+                            </div>
                         </div>
                     )}
 
-                    <div className="w-full max-w-sm flex justify-between items-center mb-4">
-                        <button onClick={() => { SoundManager.click(); onBack(); }} className="text-gray-500 font-bold bg-white px-4 py-2 rounded-xl shadow-sm">◀ 나가기</button>
-                        <span className="font-jua text-lg text-orange-800 bg-orange-200 px-4 py-1 rounded-full">내 맘대로 계산기</span>
+                    <div className="w-full max-w-sm flex justify-between items-center mb-2 sm:mb-4 shrink-0 px-1">
+                        <button onClick={() => { SoundManager.click(); onBack(); }} className="text-gray-500 font-bold bg-white px-3 py-2 sm:px-4 sm:py-2 rounded-xl shadow-sm text-sm sm:text-base">◀ 나가기</button>
+                        <span className="font-jua text-base sm:text-lg text-orange-800 bg-orange-200 px-3 py-1 sm:px-4 rounded-full">내 맘대로 계산기</span>
                     </div>
 
-                    <div className="w-full max-w-sm flex items-center justify-end mb-2 px-2 gap-2">
-                        <span className="text-sm font-bold text-orange-800">최대 자릿수:</span>
+                    <div className="w-full max-w-sm flex items-center justify-end mb-2 shrink-0 px-2 gap-2">
+                        <span className="text-xs sm:text-sm font-bold text-orange-800 whitespace-nowrap">최대 자릿수:</span>
                         <select 
                             value={maxDigits} 
                             onChange={(e) => {
@@ -409,7 +408,7 @@
                                 setEquation("");
                                 setResult(null);
                             }}
-                            className="bg-white border-2 border-orange-300 text-orange-800 font-jua rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                            className="bg-white border-2 border-orange-300 text-orange-800 font-jua rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm sm:text-base"
                         >
                             <option value={1}>0~9</option>
                             <option value={2}>0~99</option>
@@ -418,26 +417,33 @@
                         </select>
                     </div>
 
-                    <div className="bg-white p-6 rounded-3xl shadow-xl w-full max-w-sm border-4 border-orange-200">
-                        <div className="bg-gray-100 rounded-2xl h-24 mb-6 p-4 flex flex-col items-end justify-center shadow-inner relative overflow-hidden">
-                            <span className="text-4xl font-jua text-gray-500 tracking-widest">{equation || "0"}</span>
+                    <div className="bg-white p-4 sm:p-6 rounded-3xl shadow-xl w-full max-w-sm border-4 border-orange-200 flex flex-col flex-1 max-h-[550px] min-h-0">
+                        {/* 화면 창 */}
+                        <div className="bg-gray-100 rounded-2xl h-20 sm:h-24 mb-4 p-3 sm:p-4 flex flex-col items-end justify-center shadow-inner relative overflow-hidden shrink-0">
+                            {/* 수식 개행 방지 및 스크롤 처리 */}
+                            <div className="w-full text-right overflow-x-auto no-scrollbar whitespace-nowrap">
+                                <span className="text-3xl sm:text-4xl font-jua text-gray-500 tracking-widest px-1">{equation || "0"}</span>
+                            </div>
                             {result !== null && (
-                                <span className="text-5xl font-jua text-orange-500 pop-animation mt-1">= {result}</span>
+                                <span className="text-4xl sm:text-5xl font-jua text-orange-500 pop-animation mt-1 whitespace-nowrap">= {result}</span>
                             )}
                         </div>
 
-                        <div className="grid grid-cols-3 gap-3">
-                            {buttons.slice(0, 12).map((btn, idx) => (
-                                <button key={idx} onClick={() => handleInput(btn)}
-                                    className={`h-16 rounded-2xl font-jua text-3xl shadow-md active:scale-95 transition-transform flex items-center justify-center
-                                    ${btn === 'C' ? 'bg-red-100 text-red-500' : btn === '=' ? 'bg-orange-500 text-white' : 'bg-orange-50 text-orange-800 border-b-4 border-orange-200 hover:bg-orange-100'}`}>
-                                    {btn}
-                                </button>
-                            ))}
-                        </div>
-                        <div className="grid grid-cols-2 gap-3 mt-3">
-                            <button onClick={() => handleInput('+')} className="h-16 rounded-2xl font-jua text-4xl shadow-md active:scale-95 transition-transform bg-sky-100 text-sky-600 border-b-4 border-sky-200 hover:bg-sky-200">+</button>
-                            <button onClick={() => handleInput('-')} className="h-16 rounded-2xl font-jua text-4xl shadow-md active:scale-95 transition-transform bg-pink-100 text-pink-600 border-b-4 border-pink-200 hover:bg-pink-200">-</button>
+                        {/* 키패드 */}
+                        <div className="flex-1 flex flex-col gap-2 sm:gap-3 min-h-0">
+                            <div className="grid grid-cols-3 gap-2 sm:gap-3 flex-1">
+                                {buttons.slice(0, 12).map((btn, idx) => (
+                                    <button key={idx} onClick={() => handleInput(btn)}
+                                        className={`rounded-2xl font-jua text-2xl sm:text-3xl shadow-md active:scale-95 transition-transform flex items-center justify-center min-h-[40px] h-full
+                                        ${btn === 'C' ? 'bg-red-100 text-red-500' : btn === '=' ? 'bg-orange-500 text-white' : 'bg-orange-50 text-orange-800 border-b-4 border-orange-200 hover:bg-orange-100'}`}>
+                                        {btn}
+                                    </button>
+                                ))}
+                            </div>
+                            <div className="grid grid-cols-2 gap-2 sm:gap-3 shrink-0 h-14 sm:h-16">
+                                <button onClick={() => handleInput('+')} className="rounded-2xl font-jua text-3xl sm:text-4xl shadow-md active:scale-95 transition-transform bg-sky-100 text-sky-600 border-b-4 border-sky-200 hover:bg-sky-200 h-full flex items-center justify-center">+</button>
+                                <button onClick={() => handleInput('-')} className="rounded-2xl font-jua text-3xl sm:text-4xl shadow-md active:scale-95 transition-transform bg-pink-100 text-pink-600 border-b-4 border-pink-200 hover:bg-pink-200 h-full flex items-center justify-center">-</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -511,21 +517,21 @@
 
             if (gameState === 'setup') {
                 return (
-                    <div className="flex flex-col items-center justify-center min-h-screen bg-sky-50 p-4">
-                        <div className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-sm text-center">
-                            <div className="text-5xl mb-4">🤔</div>
-                            <h2 className="text-3xl font-jua text-sky-600 mb-6">몇 문제 풀까요?</h2>
-                            <div className="flex justify-center gap-4 mb-8">
+                    <div className="fixed inset-0 w-full h-full flex flex-col items-center justify-center bg-sky-50 p-4 overflow-hidden">
+                        <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-xl w-full max-w-sm text-center">
+                            <div className="text-4xl sm:text-5xl mb-4">🤔</div>
+                            <h2 className="text-2xl sm:text-3xl font-jua text-sky-600 mb-6 whitespace-nowrap">몇 문제 풀까요?</h2>
+                            <div className="flex justify-center gap-3 sm:gap-4 mb-6 sm:mb-8">
                                 {[5, 10, 20].map(num => (
                                     <button key={num} onClick={() => setTotalQ(num)} 
-                                        className={`w-16 h-16 rounded-2xl font-jua text-2xl transition-all ${totalQ === num ? 'bg-sky-500 text-white shadow-lg scale-110' : 'bg-sky-100 text-sky-600'}`}>
+                                        className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl font-jua text-xl sm:text-2xl transition-all ${totalQ === num ? 'bg-sky-500 text-white shadow-lg scale-110' : 'bg-sky-100 text-sky-600'}`}>
                                         {num}
                                     </button>
                                 ))}
                             </div>
-                            <div className="flex gap-3">
-                                <button onClick={() => { SoundManager.click(); onBack(); }} className="flex-1 bg-gray-200 text-gray-600 font-jua py-4 rounded-xl text-xl">취소</button>
-                                <button onClick={handleStart} className="flex-1 bg-sky-500 text-white font-jua py-4 rounded-xl text-xl shadow-md">시작!</button>
+                            <div className="flex gap-2 sm:gap-3">
+                                <button onClick={() => { SoundManager.click(); onBack(); }} className="flex-1 bg-gray-200 text-gray-600 font-jua py-3 sm:py-4 rounded-xl text-lg sm:text-xl">취소</button>
+                                <button onClick={handleStart} className="flex-1 bg-sky-500 text-white font-jua py-3 sm:py-4 rounded-xl text-lg sm:text-xl shadow-md">시작!</button>
                             </div>
                         </div>
                     </div>
@@ -534,15 +540,15 @@
 
             if (gameState === 'result') {
                 return (
-                    <div className="flex flex-col items-center justify-center min-h-screen bg-sky-50 p-4">
-                        <div className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-sm text-center pop-animation">
-                            <div className="text-6xl mb-4">🏆</div>
-                            <h2 className="text-4xl font-jua text-sky-600 mb-6">퀴즈 완료!</h2>
-                            <div className="text-2xl font-jua mb-8">
+                    <div className="fixed inset-0 w-full h-full flex flex-col items-center justify-center bg-sky-50 p-4 overflow-hidden">
+                        <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-xl w-full max-w-sm text-center pop-animation">
+                            <div className="text-5xl sm:text-6xl mb-4">🏆</div>
+                            <h2 className="text-3xl sm:text-4xl font-jua text-sky-600 mb-6">퀴즈 완료!</h2>
+                            <div className="text-xl sm:text-2xl font-jua mb-8">
                                 <p className="text-gray-600 mb-2">{totalQ}문제 중에서...</p>
-                                <p className="text-5xl text-sky-500">{score}개 정답!</p>
+                                <p className="text-4xl sm:text-5xl text-sky-500">{score}개 정답!</p>
                             </div>
-                            <button onClick={() => { SoundManager.click(); setGameState('setup'); }} className="w-full bg-sky-500 text-white font-jua py-4 rounded-xl text-2xl shadow-lg mb-4">
+                            <button onClick={() => { SoundManager.click(); setGameState('setup'); }} className="w-full bg-sky-500 text-white font-jua py-3 sm:py-4 rounded-xl text-xl sm:text-2xl shadow-lg mb-4">
                                 한 번 더 하기
                             </button>
                             <button onClick={() => { SoundManager.click(); onBack(); }} className="text-gray-500 font-bold underline p-2">
@@ -556,40 +562,43 @@
             const currentData = questions[currentIndex];
 
             return (
-                <div className="flex flex-col items-center justify-center min-h-screen bg-sky-50 p-4">
-                    <div className="w-full max-w-md flex justify-between items-center mb-6">
-                        <button onClick={() => { SoundManager.click(); onBack(); }} className="text-gray-500 font-bold bg-white px-4 py-2 rounded-xl shadow-sm">◀ 종료</button>
-                        <span className="text-sky-800 font-jua text-xl bg-sky-200 px-4 py-1 rounded-full">문제 {currentIndex + 1} / {totalQ}</span>
+                <div className="fixed inset-0 w-full h-full flex flex-col items-center justify-center bg-sky-50 p-2 sm:p-4 overflow-hidden">
+                    <div className="w-full max-w-md flex justify-between items-center mb-2 sm:mb-4 px-1 shrink-0">
+                        <button onClick={() => { SoundManager.click(); onBack(); }} className="text-gray-500 font-bold bg-white px-3 py-2 sm:px-4 sm:py-2 rounded-xl shadow-sm text-sm sm:text-base">◀ 종료</button>
+                        <span className="text-sky-800 font-jua text-base sm:text-lg bg-sky-200 px-3 py-1 sm:px-4 rounded-full whitespace-nowrap">문제 {currentIndex + 1} / {totalQ}</span>
                     </div>
 
-                    <div className={`bg-white p-8 rounded-3xl shadow-xl w-full max-w-md text-center mb-8 relative border-4 border-sky-200 min-h-[220px] flex flex-col justify-center items-center ${shake ? 'shake-animation' : ''}`}>
-                        <div className="text-6xl sm:text-7xl font-jua text-gray-800">
-                            {currentData.question.question} = ?
+                    <div className={`bg-white p-4 sm:p-8 rounded-3xl shadow-xl w-full max-w-md text-center mb-2 sm:mb-4 relative border-4 border-sky-200 flex flex-col justify-center items-center flex-1 min-h-[160px] shrink-0 ${shake ? 'shake-animation' : ''}`}>
+                        {/* 수식 개행 방지 */}
+                        <div className="w-full flex items-center justify-center overflow-x-auto no-scrollbar">
+                            <span className="text-5xl sm:text-6xl md:text-7xl font-jua text-gray-800 whitespace-nowrap px-2">
+                                {currentData.question.question} = ?
+                            </span>
                         </div>
                         
                         {feedback === 'correct' && (
                             <div className="absolute inset-0 flex items-center justify-center bg-green-100/90 rounded-2xl pop-animation z-10">
-                                <span className="text-8xl">⭕</span>
+                                <span className="text-6xl sm:text-8xl">⭕</span>
                             </div>
                         )}
                         {feedback === 'wrong' && (
                             <div className="absolute inset-0 flex items-center justify-center bg-red-100/90 rounded-2xl pop-animation z-10">
                                 <div className="text-center">
-                                    <span className="text-8xl block mb-2">❌</span>
-                                    <span className="text-3xl font-jua text-red-600">정답: {currentData.question.answer}</span>
+                                    <span className="text-6xl sm:text-8xl block mb-2">❌</span>
+                                    <span className="text-2xl sm:text-3xl font-jua text-red-600 whitespace-nowrap">정답: {currentData.question.answer}</span>
                                 </div>
                             </div>
                         )}
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4 w-full max-w-md">
+                    <div className="grid grid-cols-2 gap-2 sm:gap-4 w-full max-w-md shrink-0 h-1/3 min-h-[150px] max-h-[250px]">
                         {currentData.options.map((opt, idx) => (
                             <button
                                 key={idx}
                                 onClick={() => handleAnswer(opt)}
                                 disabled={!!feedback}
                                 className={`
-                                    py-6 rounded-2xl font-jua text-4xl shadow-md transition transform active:scale-95
+                                    rounded-2xl font-jua text-3xl sm:text-4xl shadow-md transition transform active:scale-95 h-full flex items-center justify-center
                                     ${feedback && opt === currentData.question.answer ? 'bg-green-500 text-white' : 'bg-white text-sky-600 border-b-4 border-sky-200 hover:bg-sky-50'}
                                     ${feedback === 'wrong' && opt !== currentData.question.answer ? 'opacity-50' : ''}
                                 `}
@@ -681,33 +690,33 @@
 
             if (gameState === 'setup' || gameState === 'result') {
                 return (
-                    <div className="flex flex-col items-center justify-center min-h-screen bg-emerald-50 p-4">
-                        <div className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-sm text-center pop-animation">
-                            <div className="text-6xl mb-4">{gameState === 'setup' ? '🧩' : '🎉'}</div>
-                            <h2 className="text-3xl font-jua text-emerald-600 mb-6">
+                    <div className="fixed inset-0 w-full h-full flex flex-col items-center justify-center bg-emerald-50 p-4 overflow-hidden">
+                        <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-xl w-full max-w-sm text-center pop-animation">
+                            <div className="text-5xl sm:text-6xl mb-4">{gameState === 'setup' ? '🧩' : '🎉'}</div>
+                            <h2 className="text-2xl sm:text-3xl font-jua text-emerald-600 mb-6 whitespace-nowrap">
                                 {gameState === 'setup' ? '짝 맞추기' : '모두 찾았어요!'}
                             </h2>
                             
                             {gameState === 'setup' && (
-                                <div className="mb-8">
+                                <div className="mb-6 sm:mb-8">
                                     <p className="text-gray-600 mb-4 font-bold">카드 개수를 고르세요</p>
-                                    <div className="flex justify-center gap-3">
+                                    <div className="flex justify-center gap-2 sm:gap-3">
                                         {[4, 6, 8].map(num => (
                                             <button key={num} onClick={() => setPairCount(num)} 
-                                                className={`w-16 h-12 rounded-xl font-jua text-xl transition-all ${pairCount === num ? 'bg-emerald-500 text-white shadow-lg scale-110' : 'bg-emerald-100 text-emerald-600'}`}>
+                                                className={`w-14 h-12 sm:w-16 sm:h-12 rounded-xl font-jua text-lg sm:text-xl transition-all ${pairCount === num ? 'bg-emerald-500 text-white shadow-lg scale-110' : 'bg-emerald-100 text-emerald-600'}`}>
                                                 {num}쌍
                                             </button>
                                         ))}
                                     </div>
-                                    <p className="text-xs text-emerald-500 mt-3 font-bold">💡 정답이 서로 다른 카드로 나옵니다!</p>
+                                    <p className="text-xs text-emerald-500 mt-3 font-bold whitespace-nowrap">💡 정답이 서로 다른 카드로 나옵니다!</p>
                                 </div>
                             )}
 
-                            <div className="flex gap-3">
-                                <button onClick={() => { SoundManager.click(); onBack(); }} className="flex-1 bg-gray-200 text-gray-600 font-jua py-4 rounded-xl text-xl hover:bg-gray-300">
+                            <div className="flex gap-2 sm:gap-3">
+                                <button onClick={() => { SoundManager.click(); onBack(); }} className="flex-1 bg-gray-200 text-gray-600 font-jua py-3 sm:py-4 rounded-xl text-lg sm:text-xl hover:bg-gray-300">
                                     {gameState === 'setup' ? '취소' : '메인으로'}
                                 </button>
-                                <button onClick={handleStart} className="flex-1 bg-emerald-500 text-white font-jua py-4 rounded-xl text-xl shadow-md hover:bg-emerald-600">
+                                <button onClick={handleStart} className="flex-1 bg-emerald-500 text-white font-jua py-3 sm:py-4 rounded-xl text-lg sm:text-xl shadow-md hover:bg-emerald-600">
                                     {gameState === 'setup' ? '시작!' : '다시 하기'}
                                 </button>
                             </div>
@@ -717,39 +726,41 @@
             }
 
             return (
-                <div className="flex flex-col items-center justify-center min-h-screen bg-emerald-50 p-4">
-                    <div className="w-full max-w-2xl flex justify-between items-center mb-6">
-                        <button onClick={() => { SoundManager.click(); onBack(); }} className="text-gray-500 font-bold bg-white px-4 py-2 rounded-xl shadow-sm">◀ 종료</button>
-                        <span className="font-jua text-emerald-700 text-xl bg-emerald-200 px-4 py-1 rounded-full">
+                <div className="fixed inset-0 w-full h-full flex flex-col items-center justify-center bg-emerald-50 p-2 sm:p-4 overflow-hidden">
+                    <div className="w-full max-w-2xl flex justify-between items-center mb-2 sm:mb-4 px-1 shrink-0">
+                        <button onClick={() => { SoundManager.click(); onBack(); }} className="text-gray-500 font-bold bg-white px-3 py-2 sm:px-4 sm:py-2 rounded-xl shadow-sm text-sm sm:text-base">◀ 종료</button>
+                        <span className="font-jua text-emerald-700 text-base sm:text-lg bg-emerald-200 px-3 py-1 sm:px-4 rounded-full whitespace-nowrap">
                             남은 짝: {pairCount - matched.length}
                         </span>
                     </div>
 
-                    <div className={`grid gap-3 w-full max-w-2xl ${pairCount >= 8 ? 'grid-cols-4' : 'grid-cols-3 sm:grid-cols-4'}`}>
-                        {cards.map((card, idx) => {
-                            const isFlippedCard = flipped.includes(idx) || matched.includes(card.pairId);
-                            const isMatchedCard = matched.includes(card.pairId);
-                            
-                            return (
-                                <div 
-                                    key={card.uniqueId}
-                                    onClick={() => handleCardClick(idx)}
-                                    className={`
-                                        aspect-[4/3] rounded-2xl flex items-center justify-center text-center cursor-pointer shadow-md transition-all duration-300
-                                        ${isFlippedCard ? 'bg-white rotate-y-180 border-2 border-emerald-200' : 'bg-emerald-400 border-b-4 border-emerald-500'}
-                                        ${isMatchedCard ? 'opacity-30 scale-95' : ''}
-                                    `}
-                                >
-                                    {isFlippedCard ? (
-                                        <span className={`font-jua ${card.type === 'q' ? 'text-2xl sm:text-3xl text-gray-700' : 'text-4xl sm:text-5xl text-emerald-600'}`}>
-                                            {card.content}
-                                        </span>
-                                    ) : (
-                                        <span className="text-3xl opacity-50 text-white drop-shadow">?</span>
-                                    )}
-                                </div>
-                            );
-                        })}
+                    <div className="flex-1 w-full max-w-2xl min-h-0 flex flex-col items-center justify-center overflow-y-auto no-scrollbar pb-2">
+                        <div className={`grid gap-2 sm:gap-3 w-full h-full content-center ${pairCount >= 8 ? 'grid-cols-4' : 'grid-cols-3 sm:grid-cols-4'}`}>
+                            {cards.map((card, idx) => {
+                                const isFlippedCard = flipped.includes(idx) || matched.includes(card.pairId);
+                                const isMatchedCard = matched.includes(card.pairId);
+                                
+                                return (
+                                    <div 
+                                        key={card.uniqueId}
+                                        onClick={() => handleCardClick(idx)}
+                                        className={`
+                                            aspect-square w-full rounded-2xl flex items-center justify-center text-center cursor-pointer shadow-md transition-all duration-300
+                                            ${isFlippedCard ? 'bg-white rotate-y-180 border-2 border-emerald-200' : 'bg-emerald-400 border-b-4 border-emerald-500'}
+                                            ${isMatchedCard ? 'opacity-30 scale-95' : ''}
+                                        `}
+                                    >
+                                        {isFlippedCard ? (
+                                            <span className={`font-jua whitespace-nowrap px-1 overflow-hidden text-ellipsis ${card.type === 'q' ? 'text-xl sm:text-3xl text-gray-700' : 'text-3xl sm:text-5xl text-emerald-600'}`}>
+                                                {card.content}
+                                            </span>
+                                        ) : (
+                                            <span className="text-2xl sm:text-3xl opacity-50 text-white drop-shadow">?</span>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
                     </div>
                 </div>
             );
@@ -787,11 +798,13 @@
             const initBlocks = useCallback(() => {
                 if (questions.length === 0 || gameState !== 'play') return;
                 
+                // 새로운 문제 표시 후 0.4초 뒤에 블록 떨어지게 (이전 문제 블록 겹침 버그 방지)
                 setBlocks([]);
                 setSuccess(false);
                 
                 setTimeout(() => {
                     const q = questions[currentIndex];
+                    if (!q) return;
                     const [n1Str, op] = q.question.split(' ');
                     const n1 = parseInt(n1Str);
                     
@@ -799,19 +812,19 @@
                     if (op === '+') {
                         // 더하기: 밖(바닥, y: 60~90)에 파랑 10개, 녹색 10개 흩뿌리기
                         for (let i = 0; i < 10; i++) {
-                            newBlocks.push({ id: `b-${i}`, type: 'blue', x: 10 + Math.random() * 30, y: 65 + Math.random() * 25 });
+                            newBlocks.push({ id: `b-${currentIndex}-${i}`, type: 'blue', x: 10 + Math.random() * 30, y: 65 + Math.random() * 25 });
                         }
                         for (let i = 0; i < 10; i++) {
-                            newBlocks.push({ id: `g-${i}`, type: 'green', x: 60 + Math.random() * 30, y: 65 + Math.random() * 25 });
+                            newBlocks.push({ id: `g-${currentIndex}-${i}`, type: 'green', x: 60 + Math.random() * 30, y: 65 + Math.random() * 25 });
                         }
                     } else {
-                        // 빼기: 큰 바구니(y: 15~40)에 처음에 주어진 숫자만큼만 파랑색 블록 배치
+                        // 빼기: 큰 바구니(y: 15~40)에 처음 주어진 숫자만큼 배치
                         for (let i = 0; i < n1; i++) {
-                            newBlocks.push({ id: `b-${i}`, type: 'blue', x: 20 + Math.random() * 60, y: 15 + Math.random() * 25 });
+                            newBlocks.push({ id: `b-${currentIndex}-${i}`, type: 'blue', x: 20 + Math.random() * 60, y: 15 + Math.random() * 25 });
                         }
                     }
                     setBlocks(newBlocks);
-                }, 400); // 0.4초 후 블록 생성
+                }, 400); 
             }, [questions, currentIndex, gameState]);
 
             useEffect(() => {
@@ -855,7 +868,7 @@
                 }
             };
 
-            // Pointer Event 핸들러
+            // Pointer Event 핸들러 (마우스/터치 통합 지원 및 영역 이탈 안정화)
             const handlePointerDown = (e, idx) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -864,8 +877,7 @@
                 SoundManager.click();
                 
                 try {
-                    // 안정적인 드래그를 위해 Pointer 캡처
-                    if (playAreaRef.current) {
+                    if (playAreaRef.current && e.pointerId) {
                         playAreaRef.current.setPointerCapture(e.pointerId);
                     }
                 } catch(err) {}
@@ -879,13 +891,14 @@
                 let x = ((e.clientX - area.left) / area.width) * 100;
                 let y = ((e.clientY - area.top) / area.height) * 100;
                 
-                // 화면 이탈 방지
                 x = Math.max(5, Math.min(95, x));
                 y = Math.max(5, Math.min(95, y));
 
                 setBlocks(prev => {
                     const newBlocks = [...prev];
-                    newBlocks[draggingIdx] = { ...newBlocks[draggingIdx], x, y };
+                    if (newBlocks[draggingIdx]) {
+                        newBlocks[draggingIdx] = { ...newBlocks[draggingIdx], x, y };
+                    }
                     return newBlocks;
                 });
             };
@@ -903,21 +916,21 @@
 
             if (gameState === 'setup') {
                 return (
-                    <div className="flex flex-col items-center justify-center min-h-screen bg-indigo-50 p-4">
-                        <div className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-sm text-center">
-                            <div className="text-5xl mb-4">🧱</div>
-                            <h2 className="text-3xl font-jua text-indigo-600 mb-6">몇 문제 해볼까요?</h2>
-                            <div className="flex justify-center gap-4 mb-8">
+                    <div className="fixed inset-0 w-full h-full flex flex-col items-center justify-center bg-indigo-50 p-4 overflow-hidden">
+                        <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-xl w-full max-w-sm text-center">
+                            <div className="text-4xl sm:text-5xl mb-4">🧱</div>
+                            <h2 className="text-2xl sm:text-3xl font-jua text-indigo-600 mb-6 whitespace-nowrap">몇 문제 해볼까요?</h2>
+                            <div className="flex justify-center gap-3 sm:gap-4 mb-6 sm:mb-8">
                                 {[3, 5, 10].map(num => (
                                     <button key={num} onClick={() => setTotalQ(num)} 
-                                        className={`w-16 h-16 rounded-2xl font-jua text-2xl transition-all ${totalQ === num ? 'bg-indigo-500 text-white shadow-lg scale-110' : 'bg-indigo-100 text-indigo-600'}`}>
+                                        className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl font-jua text-xl sm:text-2xl transition-all ${totalQ === num ? 'bg-indigo-500 text-white shadow-lg scale-110' : 'bg-indigo-100 text-indigo-600'}`}>
                                         {num}
                                     </button>
                                 ))}
                             </div>
-                            <div className="flex gap-3">
-                                <button onClick={() => { SoundManager.click(); onBack(); }} className="flex-1 bg-gray-200 text-gray-600 font-jua py-4 rounded-xl text-xl hover:bg-gray-300">취소</button>
-                                <button onClick={handleStart} className="flex-1 bg-indigo-500 text-white font-jua py-4 rounded-xl text-xl shadow-md hover:bg-indigo-600">시작!</button>
+                            <div className="flex gap-2 sm:gap-3">
+                                <button onClick={() => { SoundManager.click(); onBack(); }} className="flex-1 bg-gray-200 text-gray-600 font-jua py-3 sm:py-4 rounded-xl text-lg sm:text-xl hover:bg-gray-300">취소</button>
+                                <button onClick={handleStart} className="flex-1 bg-indigo-500 text-white font-jua py-3 sm:py-4 rounded-xl text-lg sm:text-xl shadow-md hover:bg-indigo-600">시작!</button>
                             </div>
                         </div>
                     </div>
@@ -926,15 +939,15 @@
 
             if (gameState === 'result') {
                 return (
-                    <div className="flex flex-col items-center justify-center min-h-screen bg-indigo-50 p-4">
-                        <div className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-sm text-center pop-animation">
-                            <div className="text-6xl mb-4">👑</div>
-                            <h2 className="text-4xl font-jua text-indigo-600 mb-6">참 잘했어요!</h2>
-                            <div className="text-2xl font-jua mb-8">
+                    <div className="fixed inset-0 w-full h-full flex flex-col items-center justify-center bg-indigo-50 p-4 overflow-hidden">
+                        <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-xl w-full max-w-sm text-center pop-animation">
+                            <div className="text-5xl sm:text-6xl mb-4">👑</div>
+                            <h2 className="text-3xl sm:text-4xl font-jua text-indigo-600 mb-6">참 잘했어요!</h2>
+                            <div className="text-xl sm:text-2xl font-jua mb-8">
                                 <p className="text-gray-600 mb-2">총 {totalQ}문제를</p>
-                                <p className="text-4xl text-indigo-500">모두 맞췄어요!</p>
+                                <p className="text-4xl sm:text-5xl text-indigo-500">모두 맞췄어요!</p>
                             </div>
-                            <button onClick={() => { SoundManager.click(); setGameState('setup'); }} className="w-full bg-indigo-500 text-white font-jua py-4 rounded-xl text-2xl shadow-lg mb-4 hover:bg-indigo-600">
+                            <button onClick={() => { SoundManager.click(); setGameState('setup'); }} className="w-full bg-indigo-500 text-white font-jua py-3 sm:py-4 rounded-xl text-xl sm:text-2xl shadow-lg mb-4 hover:bg-indigo-600">
                                 한 번 더 하기
                             </button>
                             <button onClick={() => { SoundManager.click(); onBack(); }} className="text-gray-500 font-bold underline p-2">
@@ -949,52 +962,52 @@
             const [n1, op, n2] = currentQ ? currentQ.question.split(' ') : ['', '', ''];
 
             return (
-                <div className="flex flex-col items-center justify-center min-h-screen bg-indigo-50 p-4">
-                    <div className="w-full max-w-2xl flex justify-between items-center mb-4">
-                        <button onClick={() => { SoundManager.click(); onBack(); }} className="text-gray-500 font-bold bg-white px-4 py-2 rounded-xl shadow-sm">◀ 종료</button>
-                        <span className="font-jua text-lg text-indigo-800 bg-indigo-200 px-4 py-1 rounded-full">블록 놀이 {currentIndex + 1} / {totalQ}</span>
+                <div className="fixed inset-0 w-full h-full flex flex-col items-center justify-center bg-indigo-50 p-2 sm:p-4 overflow-hidden">
+                    <div className="w-full max-w-2xl flex justify-between items-center mb-2 sm:mb-4 px-1 shrink-0">
+                        <button onClick={() => { SoundManager.click(); onBack(); }} className="text-gray-500 font-bold bg-white px-3 py-2 sm:px-4 sm:py-2 rounded-xl shadow-sm text-sm sm:text-base">◀ 종료</button>
+                        <span className="font-jua text-base sm:text-lg text-indigo-800 bg-indigo-200 px-3 py-1 sm:px-4 rounded-full whitespace-nowrap">블록 놀이 {currentIndex + 1} / {totalQ}</span>
                     </div>
 
-                    <div className="bg-white p-4 sm:p-6 rounded-3xl shadow-xl w-full max-w-2xl border-4 border-indigo-200 text-center flex flex-col h-[75vh]">
-                        {/* 수식 표시창 (문제) */}
-                        <div className="flex items-center justify-center gap-3 sm:gap-6 mb-4 text-4xl sm:text-5xl font-jua shrink-0">
-                            <span className="text-blue-500">{n1}</span>
-                            <span className="text-gray-600">{op}</span>
-                            <span className={op === '+' ? 'text-green-500' : 'text-red-500'}>{n2}</span>
-                            <span className="text-gray-400">=</span>
-                            <span className="text-5xl sm:text-6xl text-indigo-600">{success ? currentQ.answer : '?'}</span>
+                    <div className="bg-white p-3 sm:p-6 rounded-3xl shadow-xl w-full max-w-2xl border-4 border-indigo-200 flex flex-col flex-1 min-h-0 text-center">
+                        {/* 수식 표시창 (개행 방지) */}
+                        <div className="flex items-center justify-center gap-2 sm:gap-4 mb-2 sm:mb-4 font-jua shrink-0 whitespace-nowrap overflow-x-auto no-scrollbar w-full px-2 py-1">
+                            <span className="text-3xl sm:text-4xl md:text-5xl text-blue-500 shrink-0">{n1}</span>
+                            <span className="text-3xl sm:text-4xl md:text-5xl text-gray-600 shrink-0">{op}</span>
+                            <span className={`text-3xl sm:text-4xl md:text-5xl shrink-0 ${op === '+' ? 'text-green-500' : 'text-red-500'}`}>{n2}</span>
+                            <span className="text-3xl sm:text-4xl md:text-5xl text-gray-400 shrink-0">=</span>
+                            <span className="text-4xl sm:text-5xl md:text-6xl text-indigo-600 shrink-0">{success ? currentQ.answer : '?'}</span>
                         </div>
 
                         {/* 드래그 앤 드롭 놀이 영역 */}
                         <div 
                             ref={playAreaRef}
-                            className="w-full flex-1 bg-white rounded-2xl border-4 border-indigo-100 relative overflow-hidden"
+                            className="w-full flex-1 min-h-0 bg-white rounded-2xl border-4 border-indigo-100 relative overflow-hidden"
                             onPointerMove={handlePointerMove}
                             onPointerUp={handlePointerUp}
                             onPointerCancel={handlePointerUp}
                             style={{ touchAction: 'none' }}
                         >
-                            <div className={`absolute top-0 left-0 w-full h-1/2 flex flex-col items-center pt-4 border-b-4 border-dashed transition-colors
+                            <div className={`absolute top-0 left-0 w-full h-1/2 flex flex-col items-center pt-2 sm:pt-4 border-b-4 border-dashed transition-colors
                                 ${op === '+' ? 'bg-amber-50 border-amber-200' : 'bg-blue-50 border-blue-200'}`}>
-                                <span className="text-xl sm:text-2xl font-jua text-gray-500 opacity-80">
+                                <span className="text-lg sm:text-2xl font-jua text-gray-500 opacity-80 whitespace-nowrap">
                                     큰 바구니
                                 </span>
-                                <span className="text-sm font-jua text-gray-400">
+                                <span className="text-xs sm:text-sm font-jua text-gray-400 whitespace-nowrap">
                                     {op === '+' ? `파랑 ${n1}개, 녹색 ${n2}개를 넣어주세요!` : `여기에 파랑 블록이 ${n1}개 있어요`}
                                 </span>
                             </div>
 
-                            <div className={`absolute bottom-0 left-0 w-full h-1/2 flex flex-col items-center pb-4 transition-colors
+                            <div className={`absolute bottom-0 left-0 w-full h-1/2 flex flex-col items-center pb-2 sm:pb-4 transition-colors
                                 ${op === '+' ? 'bg-slate-50' : 'bg-red-50'}`}>
-                                <div className="absolute top-4 w-full flex justify-around px-10">
-                                    {op === '+' && <span className="text-xl font-jua text-blue-400 opacity-70">파란 블록</span>}
-                                    {op === '+' && <span className="text-xl font-jua text-green-400 opacity-70">녹색 블록</span>}
+                                <div className="absolute top-2 sm:top-4 w-full flex justify-around px-4 sm:px-10">
+                                    {op === '+' && <span className="text-sm sm:text-xl font-jua text-blue-400 opacity-70 whitespace-nowrap">파란 블록</span>}
+                                    {op === '+' && <span className="text-sm sm:text-xl font-jua text-green-400 opacity-70 whitespace-nowrap">녹색 블록</span>}
                                 </div>
                                 {op === '-' && (
-                                    <div className="absolute top-4 w-full text-center">
-                                        <span className="text-xl sm:text-2xl font-jua text-red-500 opacity-80">빼기 상자</span>
+                                    <div className="absolute top-2 sm:top-4 w-full text-center">
+                                        <span className="text-lg sm:text-2xl font-jua text-red-500 opacity-80 whitespace-nowrap">빼기 상자</span>
                                         <br />
-                                        <span className="text-sm font-jua text-gray-500">
+                                        <span className="text-xs sm:text-sm font-jua text-gray-500 whitespace-nowrap">
                                             여기로 블록 {n2}개를 빼주세요!
                                         </span>
                                     </div>
@@ -1002,10 +1015,10 @@
                             </div>
 
                             {success && (
-                                <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center pop-animation">
-                                    <div className="text-7xl mb-4">🎉</div>
-                                    <div className="text-5xl font-jua text-indigo-500 drop-shadow-md mb-6">정답은 {currentQ.answer}!</div>
-                                    <button onClick={handleNext} className="bg-indigo-500 text-white font-jua text-2xl px-8 py-4 rounded-full shadow-lg hover:bg-indigo-600 active:scale-95 animate-bounce">
+                                <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center pop-animation p-4">
+                                    <div className="text-5xl sm:text-7xl mb-2 sm:mb-4">🎉</div>
+                                    <div className="text-3xl sm:text-5xl font-jua text-indigo-500 drop-shadow-md mb-4 sm:mb-6 whitespace-nowrap">정답은 {currentQ.answer}!</div>
+                                    <button onClick={handleNext} className="bg-indigo-500 text-white font-jua text-xl sm:text-2xl px-6 py-3 sm:px-8 sm:py-4 rounded-full shadow-lg hover:bg-indigo-600 active:scale-95 animate-bounce">
                                         다음 문제 ▶
                                     </button>
                                 </div>
@@ -1023,7 +1036,7 @@
                                         touchAction: 'none',
                                         transition: draggingIdx === idx ? 'none' : 'all 0.3s ease-out'
                                     }}
-                                    className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl shadow-md border-b-4 flex items-center justify-center text-white text-xl
+                                    className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl shadow-md border-b-4 flex items-center justify-center text-white text-lg sm:text-xl
                                         ${draggingIdx === idx ? 'scale-125 z-40 shadow-xl cursor-grabbing' : 'z-10 cursor-grab'}
                                         ${b.type === 'blue' ? 'bg-blue-400 border-blue-500' : 'bg-green-400 border-green-500'}`}
                                 >
@@ -1056,18 +1069,17 @@
 
             const colors = ['#000000', '#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#a855f7', '#ec4899'];
 
-            // 캔버스 크기 동기화 로직 강화
+            // 캔버스 크기 동기화 로직 강화 (초기 화면 진입 시 글씨 안써지는 버그 해결)
             const resizeCanvas = useCallback(() => {
                 const canvas = canvasRef.current;
                 const container = containerRef.current;
                 if (!canvas || !container) return;
 
                 const rect = container.getBoundingClientRect();
-                if (rect.width === 0 || rect.height === 0) return; // 화면이 덜 그려졌을 때 무시
+                if (rect.width === 0 || rect.height === 0) return; 
 
                 const dpr = window.devicePixelRatio || 1;
                 
-                // 기존에 그린 내용을 유지하면서 리사이징
                 const ctx = canvas.getContext('2d');
                 const tempCanvas = document.createElement('canvas');
                 tempCanvas.width = canvas.width;
@@ -1085,19 +1097,19 @@
                 ctx.lineJoin = 'round';
                 ctx.lineWidth = 15; 
 
-                // 내용 복원
                 ctx.drawImage(tempCanvas, 0, 0, tempCanvas.width / dpr, tempCanvas.height / dpr);
             }, []);
 
             useEffect(() => {
                 resizeCanvas();
-                // 컴포넌트 마운트 직후 레이아웃이 확정되는 시간을 벌기 위해 한 번 더 호출 (초기화 버그 해결)
-                const timer = setTimeout(resizeCanvas, 150);
+                const timer1 = setTimeout(resizeCanvas, 50);
+                const timer2 = setTimeout(resizeCanvas, 300); // UI 렌더링 후 완벽한 동기화를 위해 한 번 더 실행
                 window.addEventListener('resize', resizeCanvas);
                 
                 return () => {
                     window.removeEventListener('resize', resizeCanvas);
-                    clearTimeout(timer);
+                    clearTimeout(timer1);
+                    clearTimeout(timer2);
                 };
             }, [resizeCanvas]);
 
@@ -1127,16 +1139,12 @@
             };
 
             const startDrawing = (e) => {
-                try {
-                    // 터치가 끊기지 않게 캡처
-                    e.target.setPointerCapture(e.pointerId);
-                } catch(err) {}
+                try { e.target.setPointerCapture(e.pointerId); } catch(err) {}
                 
                 isDrawing.current = true;
                 const coords = getCoords(e);
                 lastPos.current = coords;
 
-                // 터치하자마자 점이 찍히게 처리
                 const ctx = canvasRef.current.getContext('2d');
                 ctx.beginPath();
                 ctx.fillStyle = isRainbowMode ? `hsl(${Date.now() / 5 % 360}, 80%, 50%)` : brushColor;
@@ -1162,9 +1170,7 @@
 
             const stopDrawing = (e) => {
                 isDrawing.current = false;
-                try {
-                    if (e && e.pointerId) e.target.releasePointerCapture(e.pointerId);
-                } catch(err) {}
+                try { if (e && e.pointerId) e.target.releasePointerCapture(e.pointerId); } catch(err) {}
             };
 
             const clearCanvas = () => {
@@ -1213,50 +1219,50 @@
             };
 
             return (
-                <div className="flex flex-col items-center min-h-screen bg-pink-50 p-2 sm:p-4 fixed inset-0 w-full">
-                    <div className="w-full max-w-5xl flex justify-between items-center mb-2 px-2">
-                        <button onClick={() => { SoundManager.click(); onBack(); }} className="text-pink-600 font-bold bg-white px-4 py-2 rounded-xl shadow-sm border-2 border-pink-100">
+                <div className="fixed inset-0 w-full h-full flex flex-col items-center bg-pink-50 p-2 sm:p-4 overflow-hidden">
+                    <div className="w-full max-w-5xl flex justify-between items-center mb-2 px-1 shrink-0">
+                        <button onClick={() => { SoundManager.click(); onBack(); }} className="text-pink-600 font-bold bg-white px-3 py-2 sm:px-4 sm:py-2 rounded-xl shadow-sm border-2 border-pink-100 text-sm sm:text-base">
                             ◀ 뒤로가기
                         </button>
-                        <h1 className="text-xl sm:text-2xl font-jua text-pink-500">🎨 무지개 한글 놀이터</h1>
+                        <h1 className="text-lg sm:text-2xl font-jua text-pink-500 whitespace-nowrap">🎨 무지개 한글 놀이터</h1>
                     </div>
 
-                    <div className="w-full max-w-5xl flex flex-col gap-2 mb-2">
+                    <div className="w-full max-w-5xl flex flex-col gap-2 mb-2 shrink-0 px-1">
                         <div className="grid grid-cols-4 gap-2 w-full">
-                            <button onClick={toggleMic} className={`py-3 rounded-2xl border-2 shadow-sm flex flex-col items-center justify-center transition-all ${isListening ? 'bg-red-100 border-red-400 text-red-600 animate-pulse' : 'bg-white border-pink-100 text-pink-400'}`}>
-                                <span className="text-2xl mb-1">🎤</span>
-                                <span className="text-[11px] sm:text-xs font-bold">말하기</span>
+                            <button onClick={toggleMic} className={`py-2 sm:py-3 rounded-2xl border-2 shadow-sm flex flex-col items-center justify-center transition-all ${isListening ? 'bg-red-100 border-red-400 text-red-600 animate-pulse' : 'bg-white border-pink-100 text-pink-400'}`}>
+                                <span className="text-xl sm:text-2xl mb-1">🎤</span>
+                                <span className="text-[10px] sm:text-xs font-bold whitespace-nowrap">말하기</span>
                             </button>
-                            <button onClick={() => setShowModal(true)} className="py-3 rounded-2xl border-2 bg-white border-purple-100 text-purple-400 flex flex-col items-center justify-center shadow-sm active:scale-95">
-                                <span className="text-2xl mb-1">⌨️</span>
-                                <span className="text-[11px] sm:text-xs font-bold">글씨입력</span>
+                            <button onClick={() => setShowModal(true)} className="py-2 sm:py-3 rounded-2xl border-2 bg-white border-purple-100 text-purple-400 flex flex-col items-center justify-center shadow-sm active:scale-95">
+                                <span className="text-xl sm:text-2xl mb-1">⌨️</span>
+                                <span className="text-[10px] sm:text-xs font-bold whitespace-nowrap">글씨입력</span>
                             </button>
-                            <button onClick={speakText} className={`py-3 rounded-2xl border-2 shadow-sm flex flex-col items-center justify-center transition-all ${isSpeaking ? 'bg-blue-100 border-blue-400 text-blue-600 animate-bounce' : 'bg-white border-blue-100 text-blue-400'}`}>
-                                <span className="text-2xl mb-1">🔊</span>
-                                <span className="text-[11px] sm:text-xs font-bold">읽어주기</span>
+                            <button onClick={speakText} className={`py-2 sm:py-3 rounded-2xl border-2 shadow-sm flex flex-col items-center justify-center transition-all ${isSpeaking ? 'bg-blue-100 border-blue-400 text-blue-600 animate-bounce' : 'bg-white border-blue-100 text-blue-400'}`}>
+                                <span className="text-xl sm:text-2xl mb-1">🔊</span>
+                                <span className="text-[10px] sm:text-xs font-bold whitespace-nowrap">읽어주기</span>
                             </button>
-                            <button onClick={clearCanvas} className="py-3 rounded-2xl border-2 bg-white border-orange-100 text-orange-400 flex flex-col items-center justify-center shadow-sm active:scale-95">
-                                <span className="text-2xl mb-1">🧹</span>
-                                <span className="text-[11px] sm:text-xs font-bold">지우기</span>
+                            <button onClick={clearCanvas} className="py-2 sm:py-3 rounded-2xl border-2 bg-white border-orange-100 text-orange-400 flex flex-col items-center justify-center shadow-sm active:scale-95">
+                                <span className="text-xl sm:text-2xl mb-1">🧹</span>
+                                <span className="text-[10px] sm:text-xs font-bold whitespace-nowrap">지우기</span>
                             </button>
                         </div>
 
                         <div className="bg-white rounded-2xl border-2 border-pink-200 p-2 flex items-center justify-center shadow-sm w-full">
-                            <div className="flex gap-2 sm:gap-4 overflow-x-auto no-scrollbar py-2 px-1">
+                            <div className="flex gap-2 sm:gap-4 overflow-x-auto no-scrollbar py-1">
                                 {colors.map(color => (
                                     <button key={color} onClick={() => { setBrushColor(color); setIsRainbowMode(false); }}
-                                        className={`w-10 h-10 rounded-full border-2 shrink-0 transition-transform ${!isRainbowMode && brushColor === color ? 'border-gray-800 scale-110 shadow-md' : 'border-transparent'}`}
+                                        className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 shrink-0 transition-transform ${!isRainbowMode && brushColor === color ? 'border-gray-800 scale-110 shadow-md' : 'border-transparent'}`}
                                         style={{ backgroundColor: color }} />
                                 ))}
                                 <button onClick={() => setIsRainbowMode(true)}
-                                    className={`w-10 h-10 rounded-full border-2 shrink-0 flex items-center justify-center rainbow-btn transition-transform ${isRainbowMode ? 'border-gray-800 scale-110 shadow-md' : 'border-transparent'}`}>
-                                    <span className="text-white text-lg drop-shadow">✨</span>
+                                    className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 shrink-0 flex items-center justify-center rainbow-btn transition-transform ${isRainbowMode ? 'border-gray-800 scale-110 shadow-md' : 'border-transparent'}`}>
+                                    <span className="text-white text-base sm:text-lg drop-shadow">✨</span>
                                 </button>
                             </div>
                         </div>
                     </div>
 
-                    <div className="flex-1 w-full max-w-5xl min-h-0 relative">
+                    <div className="flex-1 w-full max-w-5xl min-h-0 relative px-1 pb-1">
                         <div ref={containerRef} className="w-full h-full bg-white rounded-3xl border-4 border-pink-300 overflow-hidden shadow-xl relative">
                             <div className="notebook-bg w-full h-full relative flex items-center justify-center p-4">
                                 <div className="absolute inset-0 flex items-center justify-center z-0 pointer-events-none p-4 overflow-hidden">
@@ -1276,17 +1282,17 @@
                     </div>
 
                     {showModal && (
-                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
+                        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
                             <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl pop-animation">
                                 <div className="flex justify-between items-center mb-6">
-                                    <h3 className="text-2xl font-jua text-gray-800">어떤 글씨를 써볼까요?</h3>
+                                    <h3 className="text-xl sm:text-2xl font-jua text-gray-800 whitespace-nowrap">어떤 글씨를 써볼까요?</h3>
                                     <button onClick={() => setShowModal(false)} className="text-gray-400 text-2xl font-bold">X</button>
                                 </div>
                                 <form onSubmit={handleTextSubmit}>
                                     <input type="text" autoFocus value={inputText} onChange={e => setInputText(e.target.value)}
-                                        className="w-full border-b-4 border-pink-300 rounded-none p-3 text-3xl font-jua text-center mb-6 focus:outline-none focus:border-pink-500 bg-pink-50"
+                                        className="w-full border-b-4 border-pink-300 rounded-none p-3 text-2xl sm:text-3xl font-jua text-center mb-6 focus:outline-none focus:border-pink-500 bg-pink-50"
                                         placeholder="글자를 적어주세요" />
-                                    <button type="submit" className="w-full bg-pink-500 text-white rounded-2xl py-4 text-2xl font-jua shadow-lg active:scale-95 transition-all">
+                                    <button type="submit" className="w-full bg-pink-500 text-white rounded-2xl py-3 sm:py-4 text-xl sm:text-2xl font-jua shadow-lg active:scale-95 transition-all">
                                         확인
                                     </button>
                                 </form>
