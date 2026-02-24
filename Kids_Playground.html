@@ -419,13 +419,17 @@
 
                     <div className="bg-white p-4 sm:p-6 rounded-3xl shadow-xl w-full max-w-sm border-4 border-orange-200 flex flex-col flex-1 max-h-[550px] min-h-0">
                         {/* 화면 창 */}
-                        <div className="bg-gray-100 rounded-2xl h-20 sm:h-24 mb-4 p-3 sm:p-4 flex flex-col items-end justify-center shadow-inner relative overflow-hidden shrink-0">
-                            {/* 수식 개행 방지 및 스크롤 처리 */}
+                        <div className="bg-gray-100 rounded-2xl h-24 sm:h-28 mb-4 p-3 sm:p-4 flex flex-col items-end justify-center shadow-inner relative overflow-hidden shrink-0">
+                            {/* 수식 개행 방지 및 스크롤 처리 (결과가 나오면 수식이 작아지도록 수정하여 겹침 방지) */}
                             <div className="w-full text-right overflow-x-auto no-scrollbar whitespace-nowrap">
-                                <span className="text-3xl sm:text-4xl font-jua text-gray-500 tracking-widest px-1">{equation || "0"}</span>
+                                <span className={`font-jua text-gray-500 tracking-widest px-1 transition-all duration-300 ${result !== null ? 'text-2xl sm:text-3xl opacity-60' : 'text-4xl sm:text-5xl'}`}>
+                                    {equation || "0"}
+                                </span>
                             </div>
                             {result !== null && (
-                                <span className="text-4xl sm:text-5xl font-jua text-orange-500 pop-animation mt-1 whitespace-nowrap">= {result}</span>
+                                <div className="w-full text-right overflow-x-auto no-scrollbar whitespace-nowrap mt-1">
+                                    <span className="text-5xl sm:text-6xl font-jua text-orange-500 pop-animation px-1 whitespace-nowrap">= {result}</span>
+                                </div>
                             )}
                         </div>
 
