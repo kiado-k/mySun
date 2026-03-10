@@ -66,7 +66,7 @@ function createBtn(char, className) {
 
 function updateDisplay() {
     inputEl.textContent = composeHangul(inputSequence);
-    inputEl.style.color = ''; 
+    inputEl.style.color = '';
 }
 
 function composeHangul(sequence) {
@@ -86,7 +86,7 @@ function composeHangul(sequence) {
             jung = JUNG_MAP[sequence[i]];
             i++;
         } else {
-            result += sequence[i-1];
+            result += sequence[i - 1];
             continue;
         }
         if (i < sequence.length && sequence[i] in JONG_MAP) {
@@ -104,7 +104,7 @@ function composeHangul(sequence) {
 
 function loadQuiz() {
     const quiz = randomizedQuiz[currentIdx];
-    if (imageEl.childNodes[0]) imageEl.childNodes[0].textContent = quiz.emoji; 
+    if (imageEl.childNodes[0]) imageEl.childNodes[0].textContent = quiz.emoji;
     inputSequence = [];
     inputEl.textContent = "";
     inputEl.style.color = '';
@@ -120,14 +120,14 @@ function playSound(type) {
 
     if (type === 'correct') {
         oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(523.25, audioCtx.currentTime); 
-        oscillator.frequency.exponentialRampToValueAtTime(659.25, audioCtx.currentTime + 0.1); 
-        oscillator.frequency.exponentialRampToValueAtTime(783.99, audioCtx.currentTime + 0.2); 
+        oscillator.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(659.25, audioCtx.currentTime + 0.1);
+        oscillator.frequency.exponentialRampToValueAtTime(783.99, audioCtx.currentTime + 0.2);
         gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
     } else {
         oscillator.type = 'triangle';
-        oscillator.frequency.setValueAtTime(392.00, audioCtx.currentTime); 
-        oscillator.frequency.exponentialRampToValueAtTime(329.63, audioCtx.currentTime + 0.2); 
+        oscillator.frequency.setValueAtTime(392.00, audioCtx.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(329.63, audioCtx.currentTime + 0.2);
         gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
     }
 
@@ -154,19 +154,19 @@ function speak(text, callback) {
 
 function checkAnswer() {
     if (isFeedbackShowing) return;
-    
+
     const quiz = randomizedQuiz[currentIdx];
-    const userInput = composeHangul(inputSequence); 
-    
-    if (userInput === "") return; 
+    const userInput = composeHangul(inputSequence);
+
+    if (userInput === "") return;
 
     isFeedbackShowing = true;
 
     if (userInput === quiz.word) {
         inputEl.style.color = '#10b981';
-        playSound('correct'); 
+        playSound('correct');
         imageEl.style.transform = 'scale(1.2)';
-        
+
         setTimeout(() => {
             currentIdx = (currentIdx + 1) % randomizedQuiz.length;
             if (currentIdx === 0) shuffleQuiz();
@@ -176,13 +176,13 @@ function checkAnswer() {
         // 틀렸을 경우: 자기 단어 읽어주고 빨간색으로만 표시 (정답 공개 안 함)
         hasFailedCurrent = true;
         inputEl.style.color = '#ef4444';
-        playSound('wrong'); 
-        
+        playSound('wrong');
+
         speak(userInput, () => {
             setTimeout(() => {
                 inputEl.style.color = '';
                 isFeedbackShowing = false;
-            }, 1000);
+            }, 100);
         });
     }
 }
@@ -208,14 +208,14 @@ function setupEventListeners() {
     imageEl.addEventListener('click', () => {
         if (isFeedbackShowing) return;
         const quiz = randomizedQuiz[currentIdx];
-        
+
         if (hasFailedCurrent) {
             // 한 번이라도 틀린 후 이미지를 누르면: 정답을 보여주고 읽어줌 (교육적 힌트)
             speak(quiz.word);
             const originalText = inputEl.textContent;
             inputEl.textContent = quiz.word;
             inputEl.style.color = '#3b82f6'; // 힌트 색상 (파란색)
-            
+
             setTimeout(() => {
                 inputEl.textContent = originalText;
                 inputEl.style.color = '';
