@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>받침 글자 놀이 - 한글 조합 놀이</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <header style="position: relative; display: flex; align-items: center; justify-content: center; min-height: 50px; margin-bottom: 20px;">
+            <a href="index.html" class="control-btn btn-clear"
+                style="position: absolute; left: 0; text-decoration: none; font-size: 1.5rem; padding: 5px 10px; width: auto; max-width: 50px;">🏡</a>
+            <h1 style="font-size: 1.8rem; white-space: nowrap; margin: 0;">🌳 받침 글자 놀이</h1>
+        </header>
+
+        <main>
+            <div class="display-area">
+                <div id="character-display" class="character-display">
+                    <span class="placeholder">자음, 모음, 받침을<br>눌러보세요!</span>
+                </div>
+                <div class="controls">
+                    <button id="btn-listen" class="control-btn btn-listen" aria-label="듣기">🔊 듣기</button>
+                    <button id="btn-clear" class="control-btn btn-clear" aria-label="지우기">🗑️ 지우기</button>
+                </div>
+            </div>
+
+            <div class="keyboard">
+                <div class="consonants-section">
+                    <h2>🌱 쑥쑥 초성</h2>
+                    <div id="consonants-grid" class="grid"></div>
+                </div>
+
+                <div class="vowels-section">
+                    <h2>☀️ 햇살 중성</h2>
+                    <div id="vowels-grid" class="grid"></div>
+                </div>
+
+                <div class="batchim-section">
+                    <h2>🍁 튼튼 종성 (받침)</h2>
+                    <div id="batchim-grid" class="grid"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="level2.js"></script>
+</body>
+
+</html>

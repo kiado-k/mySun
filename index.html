@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>한글 조합 놀이 - 메인</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .main-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%;
+            max-width: 500px;
+            margin: 40px auto;
+        }
+
+        .menu-btn {
+            font-family: 'Jua', sans-serif;
+            font-size: 1.8rem;
+            padding: 30px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            color: white;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+            text-decoration: none;
+            text-align: center;
+        }
+
+        .menu-btn:hover {
+            transform: scale(1.05) translateY(-5px);
+            box-shadow: 0 12px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-1 {
+            background-color: #818cf8;
+        }
+
+        .btn-2 {
+            background-color: #34d399;
+        }
+
+        .btn-3 {
+            background-color: #f43f5e;
+        }
+
+        .description {
+            font-size: 1.2rem;
+            color: #ffffffa9;
+            margin-top: 10px;
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container">
+        <header>
+            <h1>어떤 한글 놀이를 할까요? 🎈</h1>
+        </header>
+
+        <main>
+            <div class="main-menu">
+                <a href="level1.html" class="menu-btn btn-1">
+                    🌱 기본 글자 놀이
+                    <span class="description">받침 없는 글자를 만들어요</span>
+                </a>
+                <a href="level2.html" class="menu-btn btn-2">
+                    🌳 받침 글자 놀이
+                    <span class="description">받침이 있는 글자를 만들어요</span>
+                </a>
+                <a href="level3.html" class="menu-btn btn-3">
+                    🎨 단어 퍼즐 맞추기
+                    <span class="description">그림을 보고 단어를 써봐요</span>
+                </a>
+            </div>
+        </main>
+    </div>
+</body>
+
+</html>

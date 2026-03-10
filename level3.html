@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>단어 퍼즐 맞추기 - 한글 조합 놀이</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <header
+            style="position: relative; display: flex; align-items: center; justify-content: center; min-height: 50px; margin-bottom: 20px;">
+            <a href="index.html" class="control-btn btn-clear"
+                style="position: absolute; left: 0; text-decoration: none; font-size: 1.5rem; padding: 5px 10px; width: auto; max-width: 50px;">🏡</a>
+            <h1 style="font-size: 1.8rem; white-space: nowrap; margin: 0;">🎨 단어 퍼즐 맞추기</h1>
+        </header>
+
+        <main>
+            <div class="display-area">
+                <!-- 퀴즈 이미지 영역 -->
+                <div id="quiz-image" class="quiz-image" style="margin-bottom: 20px; cursor: pointer; position: relative;" title="클릭하면 읽어줘요!">
+                    🍎
+                    <span style="position: absolute; bottom: 10px; right: 10px; font-size: 1.2rem; background: rgba(255,255,255,0.8); border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">🔊</span>
+                </div>
+
+                <!-- 사용자가 입력한 단어가 실시간으로 완성되는 영역 -->
+                <div class="user-input-area" id="user-input"
+                    style="min-height: 80px; font-size: 3rem; display: flex; align-items: center; justify-content: center; background: #fffbeb; border: 5px dashed var(--accent-color); border-radius: 20px; width: 100%;">
+                </div>
+
+                <div class="controls" style="margin-top: 15px;">
+                    <button id="btn-check" class="control-btn btn-listen">✅ 확인</button>
+                    <button id="btn-clear" class="control-btn btn-clear">🗑️ 지우기</button>
+                    <button id="btn-next" class="control-btn btn-next">➡️ 다음</button>
+                </div>
+            </div>
+
+            <div class="keyboard">
+                <div class="consonants-section">
+                    <h2>🌱 쑥쑥 자음</h2>
+                    <div id="consonants-grid" class="grid"></div>
+                </div>
+
+                <div class="vowels-section">
+                    <h2>☀️ 햇살 모음</h2>
+                    <div id="vowels-grid" class="grid"></div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+    <script src="level3.js"></script>
+</body>
+
+</html>
