@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>한글 탐험대 놀이터</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body { background-color: #FDFBF7; font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif; }
+        /* 3D 카드 뒤집기 효과 */
+        .perspective-1000 { perspective: 1000px; }
+        .transform-style-3d { transform-style: preserve-3d; transition: transform 0.5s; }
+        .backface-hidden { backface-visibility: hidden; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+        /* 스크롤바 숨기기 */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        /* 오답 흔들기 애니메이션 */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px) rotate(-5deg); }
+            75% { transform: translateX(5px) rotate(5deg); }
+        }
+        .animate-shake { animation: shake 0.4s ease-in-out; }
+    </style>
+</head>
+<body class="p-4 md:p-8 selection:bg-[#6C5CE7] selection:text-white">
+
+<div class="max-w-[1280px] mx-auto">
+    
+    <!-- 1. Header (상단 타이틀 및 상태 바) -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center bg-white/80 backdrop-blur-md p-5 rounded-3xl shadow-sm mb-6 gap-4 border border-white">
+        <div>
+            <p class="text-xs font-bold text-gray-400 mb-1">대교상상 한글 놀이 앱</p>
+            <h1 class="text-2xl font-extrabold text-gray-800 tracking-tight">한글 탐험대 놀이터</h1>
+        </div>
+        <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+            <div class="flex items-center gap-2 bg-white px-3 py-2 sm:px-4 sm:py-2.5 rounded-2xl shadow-sm border border-gray-100">
+                <i class="fa-solid fa-star text-yellow-400 text-xl"></i>
+                <div class="flex flex-col">
+                    <span class="text-[10px] font-bold text-gray-400 leading-none">별 점수</span>
+                    <span id="star-count" class="text-sm font-extrabold text-gray-700">6</span>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 bg-white px-3 py-2 sm:px-4 sm:py-2.5 rounded-2xl shadow-sm border border-gray-100">
+                <i class="fa-solid fa-fire text-orange-400 text-xl"></i>
+                <div class="flex flex-col">
+                    <span class="text-[10px] font-bold text-gray-400 leading-none">연속 놀이</span>
+                    <span class="text-sm font-extrabold text-gray-700">1일</span>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 bg-white px-3 py-2 sm:px-4 sm:py-2.5 rounded-2xl shadow-sm border border-gray-100">
+                <i class="fa-solid fa-calendar-check text-red-400 text-xl"></i>
+                <div class="flex flex-col">
+                    <span class="text-[10px] font-bold text-gray-400 leading-none">오늘 미션</span>
+                    <span id="mission-count" class="text-sm font-extrabold text-gray-700">0 / 5</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Navigation (메뉴 탭) -->
+    <div id="nav-container" class="flex overflow-x-auto pb-4 mb-2 gap-2 sm:gap-3 no-scrollbar scroll-smooth">
+        <!-- JS로 동적 렌더링됨 -->
+    </div>
+
+    <!-- 3. 메인 콘텐츠 영역 -->
+    <div id="content-area" class="mt-4 transition-all duration-300">
+        
+        <!-- [홈 화면] -->
+        <div id="view-home" class="grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-6">
+            <!-- 좌측 미션 보드 -->
+            <div class="bg-white/80 backdrop-blur-md rounded-[32px] p-6 sm:p-8 shadow-sm flex flex-col h-full border border-white">
+                <div class="mb-6">
+                    <span class="inline-block bg-sky-100 text-sky-600 text-xs font-bold px-3 py-1.5 rounded-full mb-3">오늘의 3분 모험</span>
+                    <h2 id="home-title" class="text-[22px] md:text-[26px] font-extrabold text-gray-800 leading-tight mb-2">오늘의 한글 놀이를 시작해볼까요?</h2>
+                    <p id="home-desc" class="text-sm text-gray-500 font-medium">5개만 더 하면 루루가 큰 박수를 쳐 줄 거예요.</p>
+                </div>
+                <div id="mission-list" class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 mb-8 flex-grow">
+                    <!-- JS로 동적 렌더링됨 -->
+                </div>
+                <div class="flex flex-col sm:flex-row gap-3 mt-auto">
+                    <button onclick="switchTab('영상')" class="flex-1 bg-[#6C5CE7] hover:bg-[#5b4bc4] text-white font-bold py-3.5 sm:py-4 px-4 rounded-2xl shadow-md flex items-center justify-center gap-2">영상부터 보기</button>
+                    <button onclick="switchTab('글자 카드')" class="flex-1 bg-[#FFA502] hover:bg-[#e59400] text-white font-bold py-3.5 sm:py-4 px-4 rounded-2xl shadow-md flex items-center justify-center gap-2">글자 카드 시작</button>
+                </div>
+            </div>
+            
+            <!-- 우측 하이라이트 카드 -->
+            <div class="bg-white/80 backdrop-blur-md rounded-[32px] p-6 sm:p-8 shadow-sm flex flex-col h-full border border-white">
+                <div class="relative h-60 md:h-72 rounded-[24px] overflow-hidden mb-6 bg-gradient-to-b from-[#A8E6CF] via-[#DFF6E3] to-[#7BED9F] flex items-center justify-center">
+                    <div class="absolute top-12 right-1/4 w-24 h-24 bg-yellow-100/80 rounded-full flex items-center justify-center animate-pulse">
+                        <span class="text-4xl font-black text-amber-500">가</span>
+                    </div>
+                    <div class="absolute -bottom-10 -left-10 w-[120%] h-32 bg-[#2ED573] rounded-[100%] opacity-80"></div>
+                    
+                    <div class="relative z-10 flex flex-col items-center mt-12 cursor-pointer hover:scale-110 transition-transform" onclick="switchTab('글자 카드')">
+                        <div class="w-24 h-24 bg-white rounded-[40px] shadow-lg flex flex-col justify-center items-center relative border-4 border-gray-50">
+                            <div class="absolute -top-8 -left-2 w-8 h-14 bg-white rounded-full border-4 border-gray-50 transform -rotate-[20deg]"></div>
+                            <div class="absolute -top-8 -right-2 w-8 h-14 bg-white rounded-full border-4 border-gray-50 transform rotate-[20deg]"></div>
+                            <div class="flex gap-4 mb-1"><div class="w-2.5 h-3.5 bg-gray-800 rounded-full"></div><div class="w-2.5 h-3.5 bg-gray-800 rounded-full"></div></div>
+                            <div class="w-3 h-2 bg-pink-400 rounded-full mt-1"></div>
+                            <div class="text-lg font-black text-gray-800 mt-2">가</div>
+                        </div>
+                    </div>
+                    <div class="absolute top-6 left-6 z-20">
+                        <h3 class="text-xl sm:text-2xl font-black text-gray-800 drop-shadow-sm">한글 모험 시작!</h3>
+                        <p class="text-xs sm:text-sm font-bold text-gray-600 mt-1 bg-white/50 px-3 py-1 rounded-full inline-block backdrop-blur-sm">루루와 같이 크게 눌러 봐!</p>
+                    </div>
+                </div>
+                <div class="flex flex-col flex-grow justify-end">
+                    <span class="text-xs font-bold text-[#FFA502] mb-1 block">루루의 시작 영상</span>
+                    <h3 class="text-lg sm:text-xl font-extrabold text-gray-800 mb-2">가, 나, 다와 먼저 인사해요</h3>
+                    <p class="text-xs sm:text-sm text-gray-500 font-medium mb-4">짧은 영상으로 마음을 열고 바로 글자 놀이로 이어갈 수 있어요.</p>
+                    <button onclick="switchTab('영상')" class="w-full bg-[#FFA502] hover:bg-[#e59400] text-white font-bold text-base sm:text-lg py-3.5 sm:py-4 px-6 rounded-2xl shadow-md flex items-center justify-center gap-2 group">
+                        루루와 같이 알아보기 <i class="fa-solid fa-chevron-right ml-1"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 공통 서브 뷰 헤더 (홈 제외 모든 탭에서 사용) -->
+        <div id="subview-container" class="hidden max-w-4xl mx-auto">
+            <div class="flex items-center mb-6">
+                <button onclick="switchTab('홈')" class="p-2 mr-4 bg-white rounded-full shadow-sm hover:bg-gray-50">
+                    <i class="fa-solid fa-arrow-left text-gray-600 text-xl"></i>
+                </button>
+                <h2 id="subview-title" class="text-2xl font-extrabold text-gray-800">제목</h2>
+            </div>
+            
+            <!-- [영상 보기 화면] -->
+            <div id="view-video" class="hidden bg-white rounded-[32px] p-8 shadow-sm text-center">
+                <div class="relative w-full max-w-2xl mx-auto aspect-video bg-gray-900 rounded-2xl overflow-hidden mb-8 flex flex-col items-center justify-center">
+                    <div id="video-cover" class="w-full h-full flex flex-col items-center justify-center bg-gray-100 relative cursor-pointer" onclick="playVideo()">
+                        <img src="https://img.youtube.com/vi/Wz-rK1i_kng/maxresdefault.jpg" class="absolute inset-0 w-full h-full object-cover opacity-80">
+                        <div class="absolute inset-0 bg-black/20 hover:bg-transparent transition-colors"></div>
+                        <button class="relative z-10 w-20 h-20 bg-red-600 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(220,38,38,0.5)]">
+                            <i class="fa-solid fa-play text-white text-3xl ml-1"></i>
+                        </button>
+                    </div>
+                    <div id="video-player" class="hidden w-full h-full relative">
+                        <iframe id="youtube-iframe" width="100%" height="100%" src="" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen class="absolute inset-0"></iframe>
+                        <div class="absolute bottom-0 left-0 w-full h-2 bg-gray-800/80 z-10">
+                            <div id="video-progress" class="h-full bg-yellow-400 transition-all duration-1000" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+                <h3 class="text-2xl font-bold mb-4">신나는 가나다송 듣기 🎵</h3>
+                <p class="text-gray-500 mb-8">영상을 시청하면 미션 완료 버튼이 나타납니다!</p>
+                <button id="btn-video-complete" onclick="completeMission('video')" class="hidden bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-10 rounded-2xl shadow-lg flex items-center justify-center mx-auto gap-2 text-lg animate-bounce">
+                    <i class="fa-solid fa-circle-check text-xl"></i> 재미있게 다 봤어요!
+                </button>
+            </div>
+
+            <!-- [글자 카드 화면] -->
+            <div id="view-card" class="hidden bg-white rounded-[32px] p-8 shadow-sm text-center">
+                <p class="text-gray-500 font-bold mb-8">카드를 눌러서 소리를 듣고 글자를 확인해 보세요!</p>
+                <div class="flex flex-wrap justify-center gap-6 mb-12">
+                    <!-- 카드 1 -->
+                    <div class="relative w-32 h-40 sm:w-40 sm:h-48 cursor-pointer perspective-1000" onclick="flipCard(this, '가')">
+                        <div class="w-full h-full transform-style-3d card-inner">
+                            <div class="absolute w-full h-full backface-hidden bg-gradient-to-br from-[#FFA502] to-[#ffc048] rounded-2xl shadow-md flex items-center justify-center border-4 border-white"><span class="text-5xl font-black text-white">?</span></div>
+                            <div class="absolute w-full h-full backface-hidden rotate-y-180 bg-white rounded-2xl shadow-lg flex items-center justify-center border-4 border-[#FFA502]">
+                                <span class="text-6xl font-black text-[#FFA502]">가</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 카드 2 -->
+                    <div class="relative w-32 h-40 sm:w-40 sm:h-48 cursor-pointer perspective-1000" onclick="flipCard(this, '나')">
+                        <div class="w-full h-full transform-style-3d card-inner">
+                            <div class="absolute w-full h-full backface-hidden bg-gradient-to-br from-[#FFA502] to-[#ffc048] rounded-2xl shadow-md flex items-center justify-center border-4 border-white"><span class="text-5xl font-black text-white">?</span></div>
+                            <div class="absolute w-full h-full backface-hidden rotate-y-180 bg-white rounded-2xl shadow-lg flex items-center justify-center border-4 border-[#FFA502]">
+                                <span class="text-6xl font-black text-[#FFA502]">나</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 카드 3 -->
+                    <div class="relative w-32 h-40 sm:w-40 sm:h-48 cursor-pointer perspective-1000" onclick="flipCard(this, '다')">
+                        <div class="w-full h-full transform-style-3d card-inner">
+                            <div class="absolute w-full h-full backface-hidden bg-gradient-to-br from-[#FFA502] to-[#ffc048] rounded-2xl shadow-md flex items-center justify-center border-4 border-white"><span class="text-5xl font-black text-white">?</span></div>
+                            <div class="absolute w-full h-full backface-hidden rotate-y-180 bg-white rounded-2xl shadow-lg flex items-center justify-center border-4 border-[#FFA502]">
+                                <span class="text-6xl font-black text-[#FFA502]">다</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button id="btn-card-complete" onclick="completeMission('card')" class="hidden bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-10 rounded-2xl shadow-lg flex items-center justify-center mx-auto gap-2 text-lg animate-bounce">
+                    <i class="fa-solid fa-circle-check text-xl"></i> 다 찾았어요!
+                </button>
+            </div>
+
+            <!-- [글자 만들기 화면] -->
+            <div id="view-make" class="hidden bg-white rounded-[32px] p-6 sm:p-8 shadow-sm text-center">
+                <p class="text-gray-500 font-bold mb-8">자음과 모음을 하나씩 골라 글자를 만들어봐요!</p>
+                <div class="flex flex-col md:flex-row justify-center items-center gap-8 mb-10">
+                    <!-- 자음 -->
+                    <div class="flex flex-col gap-3">
+                        <div class="text-sm font-bold text-sky-500 bg-sky-50 rounded-full py-1">자음 (파란색)</div>
+                        <div class="flex gap-2" id="cons-buttons">
+                            <button onclick="selectLetter('cons', 'ㄱ', this)" class="w-14 h-14 rounded-2xl text-2xl font-black bg-sky-100 text-sky-700 hover:bg-sky-200">ㄱ</button>
+                            <button onclick="selectLetter('cons', 'ㄴ', this)" class="w-14 h-14 rounded-2xl text-2xl font-black bg-sky-100 text-sky-700 hover:bg-sky-200">ㄴ</button>
+                            <button onclick="selectLetter('cons', 'ㄷ', this)" class="w-14 h-14 rounded-2xl text-2xl font-black bg-sky-100 text-sky-700 hover:bg-sky-200">ㄷ</button>
+                        </div>
+                    </div>
+                    <div class="text-3xl font-black text-gray-300">+</div>
+                    <!-- 모음 -->
+                    <div class="flex flex-col gap-3">
+                        <div class="text-sm font-bold text-pink-500 bg-pink-50 rounded-full py-1">모음 (분홍색)</div>
+                        <div class="flex gap-2" id="vowel-buttons">
+                            <button onclick="selectLetter('vowel', 'ㅏ', this)" class="w-14 h-14 rounded-2xl text-2xl font-black bg-pink-100 text-pink-700 hover:bg-pink-200">ㅏ</button>
+                            <button onclick="selectLetter('vowel', 'ㅑ', this)" class="w-14 h-14 rounded-2xl text-2xl font-black bg-pink-100 text-pink-700 hover:bg-pink-200">ㅑ</button>
+                            <button onclick="selectLetter('vowel', 'ㅓ', this)" class="w-14 h-14 rounded-2xl text-2xl font-black bg-pink-100 text-pink-700 hover:bg-pink-200">ㅓ</button>
+                        </div>
+                    </div>
+                    <div class="text-3xl font-black text-gray-300">=</div>
+                    <!-- 결과 -->
+                    <div id="make-result" class="w-32 h-32 rounded-3xl flex items-center justify-center text-6xl font-black border-4 shadow-inner transition-colors duration-300 bg-gray-50 border-gray-200 text-gray-300">?</div>
+                </div>
+                <div class="mb-6 text-gray-600 font-bold">만든 글자 수: <span id="make-count">0</span>개</div>
+                <p id="make-hint" class="text-sm text-orange-500 font-bold mb-4">글자를 3번 만들어보세요!</p>
+                <button id="btn-make-complete" onclick="completeMission('make')" class="hidden bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-10 rounded-2xl shadow-lg flex items-center justify-center mx-auto gap-2 text-lg animate-bounce">
+                    <i class="fa-solid fa-circle-check text-xl"></i> 미션 완료!
+                </button>
+            </div>
+
+            <!-- [따라 쓰기 화면 (Canvas)] -->
+            <div id="view-trace" class="hidden bg-white rounded-[32px] p-6 sm:p-8 shadow-sm text-center flex flex-col items-center">
+                <p class="text-gray-500 font-bold mb-4">희미한 글자를 따라 손가락으로 예쁘게 써보세요!</p>
+                <div class="relative border-4 border-dashed border-gray-300 rounded-3xl overflow-hidden bg-gray-50 mb-6 touch-none">
+                    <div class="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
+                        <span class="text-[200px] font-black text-gray-200">가</span>
+                    </div>
+                    <!-- 모바일 터치가 완벽 지원되는 캔버스 -->
+                    <canvas id="trace-canvas" width="300" height="300" class="relative z-10 cursor-crosshair" style="touch-action: none;"></canvas>
+                </div>
+                <div class="flex gap-4">
+                    <button onclick="clearCanvas()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 px-6 rounded-2xl flex items-center gap-2">
+                        <i class="fa-solid fa-rotate-left"></i> 다시 쓰기
+                    </button>
+                    <button id="btn-trace-complete" onclick="completeMission('trace')" class="hidden bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-2xl flex items-center gap-2 animate-pulse">
+                        <i class="fa-solid fa-circle-check"></i> 다 썼어요
+                    </button>
+                </div>
+            </div>
+
+            <!-- [퀴즈 화면] -->
+            <div id="view-quiz" class="hidden bg-white rounded-[32px] p-8 shadow-sm text-center">
+                <div class="inline-block bg-teal-100 text-teal-700 font-bold px-4 py-2 rounded-full mb-6">오늘의 퀴즈</div>
+                <h3 class="text-2xl sm:text-3xl font-black text-gray-800 mb-10">
+                    다음 중 <span class="text-teal-500">"가"</span> 글자를 찾아보세요!
+                </h3>
+                <div class="grid grid-cols-2 gap-4 max-w-md mx-auto mb-8">
+                    <button onclick="checkQuiz(this, '나')" class="quiz-btn text-4xl font-black h-32 rounded-3xl border-4 bg-gray-50 border-gray-200 text-gray-700">나</button>
+                    <button onclick="checkQuiz(this, '다')" class="quiz-btn text-4xl font-black h-32 rounded-3xl border-4 bg-gray-50 border-gray-200 text-gray-700">다</button>
+                    <button onclick="checkQuiz(this, '가')" class="quiz-btn text-4xl font-black h-32 rounded-3xl border-4 bg-gray-50 border-gray-200 text-gray-700">가</button>
+                    <button onclick="checkQuiz(this, '라')" class="quiz-btn text-4xl font-black h-32 rounded-3xl border-4 bg-gray-50 border-gray-200 text-gray-700">라</button>
+                </div>
+                <p id="quiz-msg-wrong" class="hidden text-red-500 font-bold animate-pulse">아쉬워요! 다시 한번 찾아볼까요?</p>
+                <p id="quiz-msg-correct" class="hidden text-green-500 font-bold text-xl animate-bounce">정답이에요! 참 잘했어요! 🎉</p>
+                
+                <button id="btn-quiz-complete" onclick="completeMission('quiz')" class="hidden mt-6 bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-10 rounded-2xl shadow-lg flex items-center justify-center mx-auto gap-2 text-lg">
+                    <i class="fa-solid fa-circle-check"></i> 홈으로 가기
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    // 상태 관리 변수
+    let activeTab = '홈';
+    let stars = 6;
+    let missions = [
+        { id: 'video', tab: '영상', title: '영상 보기', desc: '루루 영상 1개', icon: 'fa-play', color: 'text-indigo-400', completed: false },
+        { id: 'card', tab: '글자 카드', title: '글자 카드', desc: '카드 1개 누르기', icon: 'fa-images', color: 'text-green-500', completed: false },
+        { id: 'make', tab: '글자 만들기', title: '글자 만들기', desc: '새 글자 1개', icon: 'fa-font', color: 'text-pink-400', completed: false },
+        { id: 'trace', tab: '따라 쓰기', title: '따라 쓰기', desc: '연습 글자 1개', icon: 'fa-pen', color: 'text-orange-400', completed: false },
+        { id: 'quiz', tab: '퀴즈', title: '퀴즈 도전', desc: '정답 1번', icon: 'fa-check-square', color: 'text-teal-500', completed: false },
+    ];
+    const TABS = ['홈', '영상', '글자 카드', '글자 만들기', '따라 쓰기', '퀴즈'];
+
+    // 초기화 함수
+    function init() {
+        renderNavigation();
+        updateHeader();
+        renderMissionList();
+        setupCanvas();
+    }
+
+    // 네비게이션 탭 렌더링
+    function renderNavigation() {
+        const navContainer = document.getElementById('nav-container');
+        navContainer.innerHTML = '';
+        TABS.forEach(tab => {
+            const btn = document.createElement('button');
+            btn.innerText = tab;
+            btn.onclick = () => switchTab(tab);
+            if(tab === activeTab) {
+                btn.className = "whitespace-nowrap px-5 py-3 rounded-2xl font-bold text-sm transition-all duration-200 shrink-0 shadow-md bg-[#6C5CE7] text-white transform scale-105";
+            } else {
+                btn.className = "whitespace-nowrap px-5 py-3 rounded-2xl font-bold text-sm transition-all duration-200 shrink-0 shadow-sm bg-white text-gray-500 hover:bg-gray-50 border border-transparent";
+            }
+            navContainer.appendChild(btn);
+        });
+    }
+
+    // 헤더 및 홈 텍스트 업데이트
+    function updateHeader() {
+        const completedCount = missions.filter(m => m.completed).length;
+        document.getElementById('star-count').innerText = stars;
+        document.getElementById('mission-count').innerText = `${completedCount} / 5`;
+        
+        const titleEl = document.getElementById('home-title');
+        const descEl = document.getElementById('home-desc');
+        if(completedCount > 0 && completedCount < 5) {
+            titleEl.innerText = `좋아요! 오늘 미션 ${completedCount}개를 했어요.`;
+            descEl.innerText = `${5 - completedCount}개만 더 하면 루루가 큰 박수를 쳐 줄 거예요.`;
+        } else if(completedCount === 5) {
+            titleEl.innerText = `모든 미션을 완료했어요! 최고예요!`;
+            descEl.innerText = `내일 또 재미있는 한글 모험을 떠나요.`;
+        }
+    }
+
+    // 홈 화면 미션 리스트 렌더링
+    function renderMissionList() {
+        const container = document.getElementById('mission-list');
+        container.innerHTML = '';
+        missions.forEach(mission => {
+            const div = document.createElement('div');
+            div.onclick = () => switchTab(mission.tab);
+            
+            if (mission.completed) {
+                div.className = "flex items-center p-3 sm:p-4 rounded-2xl transition-all cursor-pointer bg-green-50 border border-green-200 opacity-70";
+                div.innerHTML = `
+                    <div class="w-12 h-12 rounded-2xl flex flex-shrink-0 items-center justify-center mr-3 sm:mr-4 shadow-sm bg-green-400">
+                        <i class="fa-solid fa-check text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-sm sm:text-base text-green-800 line-through">${mission.title}</h3>
+                        <p class="text-[11px] sm:text-xs text-green-600">${mission.desc}</p>
+                    </div>
+                `;
+            } else {
+                div.className = "flex items-center p-3 sm:p-4 rounded-2xl transition-all cursor-pointer bg-white border border-gray-100 hover:border-[#6C5CE7] hover:shadow-md hover:-translate-y-1";
+                div.innerHTML = `
+                    <div class="w-12 h-12 rounded-2xl flex flex-shrink-0 items-center justify-center mr-3 sm:mr-4 shadow-sm bg-gray-50">
+                        <i class="fa-solid ${mission.icon} ${mission.color} text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-sm sm:text-base text-gray-800">${mission.title}</h3>
+                        <p class="text-[11px] sm:text-xs text-gray-400">${mission.desc}</p>
+                    </div>
+                `;
+            }
+            container.appendChild(div);
+        });
+    }
+
+    // 탭 전환 로직
+    function switchTab(tabName) {
+        activeTab = tabName;
+        renderNavigation();
+        
+        // 모든 뷰 숨기기
+        document.getElementById('view-home').classList.add('hidden');
+        document.getElementById('subview-container').classList.add('hidden');
+        ['video', 'card', 'make', 'trace', 'quiz'].forEach(id => {
+            document.getElementById(`view-${id}`).classList.add('hidden');
+        });
+
+        if (tabName === '홈') {
+            document.getElementById('view-home').classList.remove('hidden');
+            renderMissionList(); // 홈 진입 시 미션 리스트 갱신
+        } else {
+            document.getElementById('subview-container').classList.remove('hidden');
+            document.getElementById('subview-title').innerText = tabName;
+            
+            const targetMission = missions.find(m => m.tab === tabName);
+            if(targetMission) {
+                document.getElementById(`view-${targetMission.id}`).classList.remove('hidden');
+            }
+        }
+        
+        // 영상 탭을 벗어나면 iframe 중지 (src 초기화 꼼수)
+        if(tabName !== '영상') {
+            const iframe = document.getElementById('youtube-iframe');
+            if(iframe.src) iframe.src = iframe.src; 
+        }
+    }
+
+    // 미션 완료 처리
+    function completeMission(missionId) {
+        const mission = missions.find(m => m.id === missionId);
+        if(!mission.completed) {
+            mission.completed = true;
+            stars++;
+            updateHeader();
+        }
+        switchTab('홈'); // 완료 후 홈으로
+    }
+
+    // ----------------------------------------------------
+    // 기능 1: 영상 보기
+    let videoInterval;
+    function playVideo() {
+        document.getElementById('video-cover').classList.add('hidden');
+        document.getElementById('video-player').classList.remove('hidden');
+        document.getElementById('youtube-iframe').src = "https://www.youtube.com/embed/Wz-rK1i_kng?autoplay=1";
+        
+        // 진행률 게이지바 (시연용 10초)
+        let progress = 0;
+        const progressEl = document.getElementById('video-progress');
+        videoInterval = setInterval(() => {
+            progress += 10;
+            progressEl.style.width = `${progress}%`;
+            if(progress >= 100) {
+                clearInterval(videoInterval);
+                document.getElementById('btn-video-complete').classList.remove('hidden');
+            }
+        }, 1000);
+    }
+
+    // ----------------------------------------------------
+    // 기능 2: 글자 카드
+    let flippedCount = 0;
+    function flipCard(el, char) {
+        const inner = el.querySelector('.card-inner');
+        if (!inner.classList.contains('rotate-y-180')) {
+            inner.classList.add('rotate-y-180');
+            flippedCount++;
+            
+            // TTS 음성 읽어주기
+            speakText(char);
+
+            if(flippedCount === 3) {
+                setTimeout(() => {
+                    document.getElementById('btn-card-complete').classList.remove('hidden');
+                }, 500);
+            }
+        }
+    }
+
+    // ----------------------------------------------------
+    // 기능 3: 글자 만들기
+    let selCons = null, selVowel = null;
+    let makeCount = 0;
+    const HANGUL_MAP = {
+        'ㄱㅏ': '가', 'ㄱㅑ': '갸', 'ㄱㅓ': '거',
+        'ㄴㅏ': '나', 'ㄴㅑ': '냐', 'ㄴㅓ': '너',
+        'ㄷㅏ': '다', 'ㄷㅑ': '댜', 'ㄷㅓ': '더'
+    };
+
+    function selectLetter(type, val, btnEl) {
+        // 스타일 리셋
+        const container = type === 'cons' ? document.getElementById('cons-buttons') : document.getElementById('vowel-buttons');
+        Array.from(container.children).forEach(btn => {
+            btn.className = type === 'cons' 
+                ? "w-14 h-14 rounded-2xl text-2xl font-black bg-sky-100 text-sky-700 hover:bg-sky-200" 
+                : "w-14 h-14 rounded-2xl text-2xl font-black bg-pink-100 text-pink-700 hover:bg-pink-200";
+        });
+
+        // 선택 스타일 적용
+        btnEl.className = type === 'cons'
+            ? "w-14 h-14 rounded-2xl text-2xl font-black bg-sky-500 text-white scale-110 shadow-md transition-all"
+            : "w-14 h-14 rounded-2xl text-2xl font-black bg-pink-500 text-white scale-110 shadow-md transition-all";
+
+        if(type === 'cons') selCons = val;
+        if(type === 'vowel') selVowel = val;
+
+        checkMakeResult();
+    }
+
+    function checkMakeResult() {
+        if(selCons && selVowel) {
+            const combined = HANGUL_MAP[selCons + selVowel] || '?';
+            const resultBox = document.getElementById('make-result');
+            
+            if(combined !== '?') {
+                resultBox.innerText = combined;
+                resultBox.className = "w-32 h-32 rounded-3xl flex items-center justify-center text-6xl font-black border-4 shadow-inner transition-colors duration-300 bg-green-100 border-green-400 text-green-700 animate-pulse";
+                speakText(combined); // TTS
+                
+                makeCount++;
+                document.getElementById('make-count').innerText = makeCount;
+                
+                if(makeCount >= 3) {
+                    document.getElementById('btn-make-complete').classList.remove('hidden');
+                    document.getElementById('make-hint').classList.add('hidden');
+                }
+
+                // 1초 후 리셋
+                setTimeout(() => {
+                    selCons = null; selVowel = null;
+                    resultBox.innerText = '?';
+                    resultBox.className = "w-32 h-32 rounded-3xl flex items-center justify-center text-6xl font-black border-4 shadow-inner transition-colors duration-300 bg-gray-50 border-gray-200 text-gray-300";
+                    // 버튼 스타일도 리셋
+                    selectLetter('cons', null, document.createElement('div')); 
+                    selectLetter('vowel', null, document.createElement('div'));
+                }, 1500);
+            }
+        }
+    }
+
+    // ----------------------------------------------------
+    // 기능 4: 캔버스 따라 쓰기
+    const canvas = document.getElementById('trace-canvas');
+    const ctx = canvas.getContext('2d');
+    let isDrawing = false;
+    
+    function setupCanvas() {
+        ctx.lineWidth = 15;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.strokeStyle = '#6C5CE7';
+        
+        // 모바일 터치 이벤트
+        canvas.addEventListener('touchstart', startDraw, {passive: false});
+        canvas.addEventListener('touchmove', draw, {passive: false});
+        canvas.addEventListener('touchend', endDraw);
+        // PC 마우스 이벤트
+        canvas.addEventListener('mousedown', startDraw);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', endDraw);
+        canvas.addEventListener('mouseleave', endDraw);
+    }
+
+    function getPos(e) {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+        const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+        return {
+            x: clientX - rect.left,
+            y: clientY - rect.top
+        };
+    }
+
+    function startDraw(e) {
+        e.preventDefault();
+        isDrawing = true;
+        const pos = getPos(e);
+        ctx.beginPath();
+        ctx.moveTo(pos.x, pos.y);
+        document.getElementById('btn-trace-complete').classList.remove('hidden');
+    }
+
+    function draw(e) {
+        if (!isDrawing) return;
+        e.preventDefault(); // 스크롤 방지
+        const pos = getPos(e);
+        ctx.lineTo(pos.x, pos.y);
+        ctx.stroke();
+    }
+
+    function endDraw() {
+        isDrawing = false;
+    }
+
+    function clearCanvas() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        document.getElementById('btn-trace-complete').classList.add('hidden');
+    }
+
+    // ----------------------------------------------------
+    // 기능 5: 퀴즈
+    function checkQuiz(btnEl, answer) {
+        const btns = document.querySelectorAll('.quiz-btn');
+        btns.forEach(b => {
+            b.className = "quiz-btn text-4xl font-black h-32 rounded-3xl border-4 bg-gray-50 border-gray-200 text-gray-700 opacity-50";
+            b.disabled = true; // 중복클릭 방지
+        });
+        
+        if(answer === '가') {
+            btnEl.className = "quiz-btn text-4xl font-black h-32 rounded-3xl border-4 bg-green-500 border-green-600 text-white scale-105 transition-all z-10";
+            document.getElementById('quiz-msg-correct').classList.remove('hidden');
+            document.getElementById('quiz-msg-wrong').classList.add('hidden');
+            document.getElementById('btn-quiz-complete').classList.remove('hidden');
+            speakText("가! 정답이에요!");
+        } else {
+            btnEl.className = "quiz-btn text-4xl font-black h-32 rounded-3xl border-4 bg-red-400 border-red-500 text-white animate-shake z-10";
+            document.getElementById('quiz-msg-wrong').classList.remove('hidden');
+            setTimeout(() => {
+                // 원상복구
+                btns.forEach(b => {
+                    b.className = "quiz-btn text-4xl font-black h-32 rounded-3xl border-4 bg-gray-50 border-gray-200 text-gray-700 hover:bg-teal-50";
+                    b.disabled = false;
+                });
+                document.getElementById('quiz-msg-wrong').classList.add('hidden');
+            }, 1000);
+        }
+    }
+
+    // ----------------------------------------------------
+    // 공통 유틸: TTS (텍스트 음성 변환)
+    function speakText(text) {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel(); 
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'ko-KR';
+            utterance.rate = 0.8; // 아이들을 위해 살짝 느리게
+            window.speechSynthesis.speak(utterance);
+        }
+    }
+
+    // 앱 실행
+    init();
+</script>
+</body>
+</html>
+

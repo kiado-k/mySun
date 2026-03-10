@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>초등 수학 학습 마스터</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f1f5f9;
+            margin: 0;
+            padding: 0;
+            color: #1e293b;
+        }
+
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 12mm 20mm;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 4px 30px rgba(0,0,0,0.08);
+        }
+
+        @media print {
+            body { background: none; padding: 0; }
+            .page { 
+                margin: 0; 
+                box-shadow: none; 
+                width: 100%; 
+                height: auto; 
+                padding: 15mm 20mm;
+            }
+            .no-print { display: none; }
+            #worksheetTitle {
+                display: block !important;
+                width: 100%;
+                text-align: center;
+                margin-top: 5mm;
+                margin-bottom: 10mm;
+                font-size: 24pt !important;
+            }
+        }
+
+        .math-box {
+            display: inline-block;
+            width: 48px;
+            height: 34px;
+            border: 1.8px solid #334155;
+            text-align: center;
+            vertical-align: middle;
+            font-weight: bold;
+            font-size: 1.1rem;
+            line-height: 30px;
+            margin: 0 2px;
+            background-color: #fff;
+        }
+
+        .math-box.wide { width: 85px; }
+        .math-box.ans { width: 100px; border-color: #4f46e5; border-width: 2.5px; }
+
+        .calculation-line {
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+        }
+
+        .problem-item {
+            padding: 12px 0;
+            border-bottom: 1.5px solid #f1f5f9;
+            margin-bottom: 8px;
+            break-inside: avoid;
+        }
+
+        .problem-header {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 12px;
+            color: #0f172a;
+        }
+
+        .hidden { display: none; }
+
+        .category-card {
+            background: white;
+            border-radius: 1.5rem;
+            padding: 1.5rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid transparent;
+            cursor: pointer;
+            text-align: left;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .category-card:hover:not(.disabled) {
+            transform: translateY(-8px);
+            border-color: #4f46e5;
+            box-shadow: 0 20px 25px -5px rgba(79, 70, 229, 0.1);
+        }
+
+        .category-card.disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            background-color: #f8fafc;
+        }
+
+        .badge-soon {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: #94a3b8;
+            color: white;
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-weight: bold;
+        }
+
+        .digit-btn {
+            border: 2px solid #e2e8f0;
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        .digit-btn.selected {
+            border-color: #4f46e5;
+            background-color: #eef2ff;
+            color: #4f46e5;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 메인 대시보드 화면 -->
+    <div id="screen-main" class="no-print min-h-screen flex items-center justify-center p-6">
+        <div class="max-w-5xl w-full">
+            <header class="text-center mb-10">
+                <h1 class="text-4xl font-black text-slate-900 mb-3 text-center">초등 수학 학습 마스터</h1>
+                <p class="text-slate-500 text-lg">원하는 영역을 선택하여 나만의 맞춤 학습지를 만들어보세요.</p>
+            </header>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div onclick="goToSetup()" class="category-card shadow-sm border-slate-200">
+                    <div class="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-800 mb-2">수연산 연습</h3>
+                    <p class="text-slate-500 text-sm">받아올림과 받아내림의 원리를 단계별로 학습합니다.</p>
+                </div>
+
+                <div class="category-card disabled shadow-sm">
+                    <span class="badge-soon">준비 중</span>
+                    <div class="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center mb-4 text-slate-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-800 mb-2">분수의 계산</h3>
+                    <p class="text-slate-500 text-sm">진분수, 가분수, 대분수의 사칙연산을 다룹니다.</p>
+                </div>
+
+                <div class="category-card disabled shadow-sm">
+                    <span class="badge-soon">준비 중</span>
+                    <div class="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center mb-4 text-slate-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-800 mb-2">소수의 이해</h3>
+                    <p class="text-slate-500 text-sm">소수의 자릿수 개념과 덧셈, 뺄셈을 익힙니다.</p>
+                </div>
+
+                <div class="category-card disabled shadow-sm">
+                    <span class="badge-soon">준비 중</span>
+                    <div class="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center mb-4 text-slate-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-800 mb-2">비와 비율</h3>
+                    <p class="text-slate-500 text-sm">백분율과 비례식을 실생활 문제로 풀어봅니다.</p>
+                </div>
+            </div>
+            
+            <footer class="mt-12 text-center text-slate-400 text-sm">
+                &copy; 2026 초등 수학 학습 마스터. 모든 연습 문제를 담았습니다.
+            </footer>
+        </div>
+    </div>
+
+    <!-- 설정 화면 (수연산 전용) -->
+    <div id="screen-setup" class="no-print hidden min-h-screen flex items-center justify-center p-6">
+        <div class="bg-white p-8 rounded-3xl shadow-xl max-w-lg w-full">
+            <header class="mb-6">
+                <button onclick="goToMain()" class="text-indigo-600 font-bold mb-3 flex items-center gap-1 hover:underline text-sm">
+                    &larr; 카테고리로 돌아가기
+                </button>
+                <h2 class="text-2xl font-black text-slate-900">수연산 옵션 설정</h2>
+            </header>
+            
+            <div class="space-y-6">
+                <div>
+                    <p class="text-xs font-black text-slate-700 mb-3 uppercase tracking-wider">첫 번째 수 자릿수</p>
+                    <div class="grid grid-cols-3 gap-3">
+                        <button class="digit-btn d1-btn" onclick="setDigit('d1', 1)">1자리</button>
+                        <button class="digit-btn d1-btn selected" onclick="setDigit('d1', 2)">2자리</button>
+                        <button class="digit-btn d1-btn" onclick="setDigit('d1', 3)">3자리</button>
+                    </div>
+                </div>
+
+                <div>
+                    <p class="text-xs font-black text-slate-700 mb-3 uppercase tracking-wider">두 번째 수 자릿수</p>
+                    <div class="grid grid-cols-3 gap-3">
+                        <button class="digit-btn d2-btn" onclick="setDigit('d2', 1)">1자리</button>
+                        <button class="digit-btn d2-btn selected" onclick="setDigit('d2', 2)">2자리</button>
+                        <button class="digit-btn d2-btn" onclick="setDigit('d2', 3)">3자리</button>
+                    </div>
+                </div>
+
+                <div>
+                    <p class="text-xs font-black text-slate-700 mb-3 uppercase tracking-wider">문제 생성 개수</p>
+                    <div class="flex items-center bg-slate-50 border-2 border-slate-100 rounded-2xl p-1">
+                        <input type="number" id="setupProblemCount" value="4" min="1" max="100" class="bg-transparent w-full text-center font-black text-xl outline-none py-2">
+                    </div>
+                </div>
+
+                <button onclick="generateWorksheet()" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black text-lg hover:bg-indigo-700 transition-all shadow-lg hover:shadow-indigo-200">
+                    학습지 생성하기
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 문제지 화면 -->
+    <div id="screen-worksheet" class="hidden">
+        <div class="no-print bg-slate-900 p-3 sticky top-0 z-50 shadow-2xl">
+            <div class="max-w-4xl mx-auto flex justify-between items-center text-white">
+                <button onclick="goToSetup()" class="flex items-center gap-2 font-bold hover:text-indigo-400 transition text-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+                    </svg>
+                    옵션 변경
+                </button>
+                <div class="text-base font-black tracking-tight text-indigo-400 uppercase">초등 수학 학습 마스터</div>
+                <button onclick="window.print()" class="bg-indigo-600 text-white px-6 py-1.5 rounded-full font-bold shadow-lg hover:bg-indigo-500 transition text-sm">
+                    인쇄하기
+                </button>
+            </div>
+        </div>
+
+        <div class="page">
+            <div class="text-center mb-6">
+                <h1 id="worksheetTitle" class="text-2xl font-black border-b-2 border-slate-900 inline-block pb-1 px-4 text-center">연산 연습</h1>
+            </div>
+
+            <div id="worksheetContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        let config = { d1: 2, d2: 2 };
+
+        function setDigit(target, val) {
+            config[target] = val;
+            document.querySelectorAll(`.${target}-btn`).forEach((btn, idx) => {
+                if(idx === val - 1) btn.classList.add('selected');
+                else btn.classList.remove('selected');
+            });
+        }
+
+        function goToMain() {
+            document.getElementById('screen-main').classList.remove('hidden');
+            document.getElementById('screen-setup').classList.add('hidden');
+            document.getElementById('screen-worksheet').classList.add('hidden');
+            window.scrollTo(0, 0);
+        }
+
+        function goToSetup() {
+            document.getElementById('screen-main').classList.add('hidden');
+            document.getElementById('screen-setup').classList.remove('hidden');
+            document.getElementById('screen-worksheet').classList.add('hidden');
+            window.scrollTo(0, 0);
+        }
+
+        function getRandomByDigit(digit) {
+            if(digit === 1) return getRandom(2, 9);
+            if(digit === 2) return getRandom(11, 99);
+            if(digit === 3) return getRandom(101, 999);
+            return 0;
+        }
+
+        function getRandom(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function b(val, probability = 0.5) {
+            return Math.random() < probability ? `<div class="math-box"></div>` : val;
+        }
+        function bw(val, probability = 0.5) {
+            return Math.random() < probability ? `<div class="math-box wide"></div>` : val;
+        }
+
+        function generateWorksheet() {
+            const count = document.getElementById('setupProblemCount').value;
+            const container = document.getElementById('worksheetContainer');
+            let html = '';
+            
+            for (let i = 1; i <= count; i++) {
+                let n1 = getRandomByDigit(config.d1);
+                let n2 = getRandomByDigit(config.d2);
+                const isSub = Math.random() > 0.4;
+                if(isSub && n1 < n2) [n1, n2] = [n2, n1];
+                html += isSub ? renderSubtraction(i, n1, n2) : renderAddition(i, n1, n2);
+            }
+            
+            container.innerHTML = html;
+            document.getElementById('screen-setup').classList.add('hidden');
+            document.getElementById('screen-worksheet').classList.remove('hidden');
+            document.getElementById('worksheetTitle').innerText = `${config.d1}자리와 ${config.d2}자리의 연산 연습`;
+            window.scrollTo(0, 0);
+        }
+
+        function split(num) {
+            return {
+                h: Math.floor(num/100) * 100,
+                t: Math.floor((num%100)/10) * 10,
+                o: num % 10
+            };
+        }
+
+        function renderAddition(index, n1, n2) {
+            const s1 = split(n1), s2 = split(n2);
+            
+            if (n1 < 10 && n2 < 10) {
+                return `
+                    <div class="problem-item">
+                        <div class="problem-header">${index}. ${n1} ＋ ${n2}</div>
+                        <div class="calculation-line">= <div class="math-box ans"></div></div>
+                    </div>
+                `;
+            }
+
+            const showH = (s1.h > 0 || s2.h > 0);
+            const showT = (s1.t > 0 || s2.t > 0);
+
+            let line1 = `= (`;
+            if(showH) line1 += `${b(s1.h)} ＋ `;
+            if(showT) line1 += `${b(s1.t)} ＋ `;
+            line1 += `${b(s1.o)}) ＋ (`;
+            if(showH) line1 += `${b(s2.h)} ＋ `;
+            if(showT) line1 += `${b(s2.t)} ＋ `;
+            line1 += `${b(s2.o)})`;
+
+            let line2 = `= (`;
+            if(showH) line2 += `${b(s1.h)} ＋ ${b(s2.h)}`;
+            if(showH && showT) line2 += `) ＋ (`;
+            if(showT) line2 += `${b(s1.t)} ＋ ${b(s2.t)}`;
+            line2 += `) ＋ (${b(s1.o)} ＋ ${b(s2.o)})`;
+
+            return `
+                <div class="problem-item">
+                    <div class="problem-header">${index}. ${n1} ＋ ${n2}</div>
+                    <div class="calculation-line">${line1}</div>
+                    <div class="calculation-line">${line2}</div>
+                    <div class="calculation-line">= ${bw(s1.h+s2.h)} ＋ ${bw(s1.t+s2.t)} ＋ ${b(s1.o+s2.o)}</div>
+                    <div class="calculation-line">= <div class="math-box ans"></div></div>
+                </div>
+            `;
+        }
+
+        function renderSubtraction(index, n1, n2) {
+            const s1 = split(n1), s2 = split(n2);
+            
+            if (n1 < 10 && n2 < 10) {
+                return `
+                    <div class="problem-item">
+                        <div class="problem-header">${index}. ${n1} － ${n2}</div>
+                        <div class="calculation-line">= <div class="math-box ans"></div></div>
+                    </div>
+                `;
+            }
+
+            const borrowO = (s1.o < s2.o);
+            const borrowT = borrowO ? (s1.t - 10 < s2.t) : (s1.t < s2.t);
+
+            if (n1 < 100 && n2 < 10 && !borrowO) {
+                return `
+                    <div class="problem-item">
+                        <div class="problem-header">${index}. ${n1} － ${n2}</div>
+                        <div class="calculation-line">= (${s1.t} ＋ ${s1.o}) － ${s2.o}</div>
+                        <div class="calculation-line">= ${s1.t} ＋ (${b(s1.o)} － ${b(s2.o)})</div>
+                        <div class="calculation-line">= <div class="math-box ans"></div></div>
+                    </div>
+                `;
+            }
+
+            let steps = '';
+            let decompLine = `= (`;
+            if(s1.h > 0) decompLine += `${b(s1.h)} ＋ `;
+            if(s1.t > 0 || s1.h > 0) decompLine += `${b(s1.t)} ＋ `;
+            decompLine += `${b(s1.o)}) － (`;
+            if(s2.h > 0) decompLine += `${b(s2.h)} ＋ `;
+            if(s2.t > 0 || s2.h > 0) decompLine += `${b(s2.t)} ＋ `;
+            decompLine += `${b(s2.o)})`;
+            steps += `<div class="calculation-line">${decompLine}</div>`;
+            
+            let groupLine = `= (`;
+            if(s1.h > 0 || s2.h > 0) groupLine += `${b(s1.h)} － ${b(s2.h)}) ＋ (`;
+            if(s1.t > 0 || s2.t > 0) groupLine += `${b(s1.t)} － ${b(s2.t)}) ＋ (`;
+            groupLine += `${b(s1.o)} － ${b(s2.o)})`;
+            steps += `<div class="calculation-line">${groupLine}</div>`;
+            
+            let curH = s1.h, curT = s1.t, curO = s1.o;
+
+            if (borrowO) {
+                let borrowLine = `= (`;
+                if(s1.h > 0 || s2.h > 0) borrowLine += `${b(s1.h)} － ${b(s2.h)}) ＋ (`;
+                borrowLine += `${b(s1.t)} － ${b(10)} － ${b(s2.t)}) ＋ (${b(10)} ＋ ${b(s1.o)} － ${b(s2.o)})`;
+                steps += `<div class="calculation-line">${borrowLine}</div>`;
+                curT -= 10;
+                curO += 10;
+            }
+
+            if (borrowT && s1.h >= 100) {
+                steps += `<div class="calculation-line">= (${b(s1.h)} － ${b(100)} － ${b(s2.h)}) ＋ (${b(100)} ＋ ${b(curT)} － ${b(s2.t)}) ＋ (${b(curO - s2.o)})</div>`;
+                curH -= 100;
+                curT += 100;
+            }
+
+            const hRes = curH - s2.h;
+            const tRes = curT - s2.t;
+            const oRes = curO - s2.o;
+
+            let resultSumLine = `= `;
+            if(hRes > 0) resultSumLine += `${bw(hRes)} ＋ `;
+            if(tRes > 0 || hRes > 0) resultSumLine += `${bw(tRes)} ＋ `;
+            resultSumLine += `${b(oRes)}`;
+            steps += `<div class="calculation-line">${resultSumLine}</div>`;
+            steps += `<div class="calculation-line">= <div class="math-box ans"></div></div>`;
+
+            return `<div class="problem-item"><div class="problem-header">${index}. ${n1} － ${n2}</div>${steps}</div>`;
+        }
+    </script>
+</body>
+</html>
