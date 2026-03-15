@@ -70,8 +70,7 @@ body {
 /* Header Styles */
 .hero-header {
   text-align: center;
-  margin-top: 4rem;
-  margin-bottom: 3rem;
+  margin-bottom: 1rem;
 }
 
 .hero-header h1 {
