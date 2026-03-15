@@ -3885,7 +3885,7 @@
     "root_lv": 4,
     "seq": 1,
     "eng": "zero",
-    "kor": "영",
+    "kor": "0",
     "num": 0,
     "img": ""
   },
@@ -3895,7 +3895,7 @@
     "root_lv": 4,
     "seq": 2,
     "eng": "one",
-    "kor": "일",
+    "kor": "1",
     "num": 1,
     "img": ""
   },
@@ -3905,7 +3905,7 @@
     "root_lv": 4,
     "seq": 3,
     "eng": "two",
-    "kor": "이",
+    "kor": "2",
     "num": 2,
     "img": ""
   },
@@ -3915,7 +3915,7 @@
     "root_lv": 4,
     "seq": 4,
     "eng": "three",
-    "kor": "삼",
+    "kor": "3",
     "num": 3,
     "img": ""
   },
@@ -3925,7 +3925,7 @@
     "root_lv": 4,
     "seq": 5,
     "eng": "four",
-    "kor": "사",
+    "kor": "4",
     "num": 4,
     "img": ""
   },
@@ -3935,7 +3935,7 @@
     "root_lv": 4,
     "seq": 6,
     "eng": "five",
-    "kor": "오",
+    "kor": "5",
     "num": 5,
     "img": ""
   },
@@ -3945,7 +3945,7 @@
     "root_lv": 4,
     "seq": 7,
     "eng": "six",
-    "kor": "육",
+    "kor": "6",
     "num": 6,
     "img": ""
   },
@@ -3955,7 +3955,7 @@
     "root_lv": 4,
     "seq": 8,
     "eng": "seven",
-    "kor": "칠",
+    "kor": "7",
     "num": 7,
     "img": ""
   },
@@ -3965,7 +3965,7 @@
     "root_lv": 4,
     "seq": 9,
     "eng": "eight",
-    "kor": "팔",
+    "kor": "8",
     "num": 8,
     "img": ""
   },
@@ -3975,7 +3975,7 @@
     "root_lv": 4,
     "seq": 10,
     "eng": "nine",
-    "kor": "구",
+    "kor": "9",
     "num": 9,
     "img": ""
   },
@@ -3985,7 +3985,7 @@
     "root_lv": 4,
     "seq": 11,
     "eng": "ten",
-    "kor": "십",
+    "kor": "10",
     "num": 10,
     "img": ""
   },
@@ -3995,7 +3995,7 @@
     "root_lv": 4,
     "seq": 12,
     "eng": "eleven",
-    "kor": "십일",
+    "kor": "11",
     "num": 11,
     "img": ""
   },
@@ -4005,7 +4005,7 @@
     "root_lv": 4,
     "seq": 13,
     "eng": "twelve",
-    "kor": "십이",
+    "kor": "12",
     "num": 12,
     "img": ""
   },
@@ -4015,7 +4015,7 @@
     "root_lv": 4,
     "seq": 14,
     "eng": "thirteen",
-    "kor": "십삼",
+    "kor": "13",
     "num": 13,
     "img": ""
   },
@@ -4025,7 +4025,7 @@
     "root_lv": 4,
     "seq": 15,
     "eng": "fourteen",
-    "kor": "십사",
+    "kor": "14",
     "num": 14,
     "img": ""
   },
@@ -4035,7 +4035,7 @@
     "root_lv": 4,
     "seq": 16,
     "eng": "fifteen",
-    "kor": "십오",
+    "kor": "15",
     "num": 15,
     "img": ""
   },
@@ -4045,7 +4045,7 @@
     "root_lv": 4,
     "seq": 17,
     "eng": "sixteen",
-    "kor": "십육",
+    "kor": "16",
     "num": 16,
     "img": ""
   },
@@ -4055,7 +4055,7 @@
     "root_lv": 4,
     "seq": 18,
     "eng": "seventeen",
-    "kor": "십칠",
+    "kor": "17",
     "num": 17,
     "img": ""
   },
@@ -4065,7 +4065,7 @@
     "root_lv": 4,
     "seq": 19,
     "eng": "eighteen",
-    "kor": "십팔",
+    "kor": "18",
     "num": 18,
     "img": ""
   },
@@ -4075,7 +4075,7 @@
     "root_lv": 4,
     "seq": 20,
     "eng": "nineteen",
-    "kor": "십구",
+    "kor": "19",
     "num": 19,
     "img": ""
   },
@@ -4085,7 +4085,7 @@
     "root_lv": 4,
     "seq": 21,
     "eng": "twenty",
-    "kor": "이십",
+    "kor": "20",
     "num": 20,
     "img": ""
   },
@@ -4095,7 +4095,7 @@
     "root_lv": 4,
     "seq": 22,
     "eng": "thirty",
-    "kor": "삼십",
+    "kor": "30",
     "num": 30,
     "img": ""
   },
@@ -4105,7 +4105,7 @@
     "root_lv": 4,
     "seq": 23,
     "eng": "forty",
-    "kor": "사십",
+    "kor": "40",
     "num": 40,
     "img": ""
   },
@@ -4115,7 +4115,7 @@
     "root_lv": 4,
     "seq": 24,
     "eng": "fifty",
-    "kor": "오십",
+    "kor": "50",
     "num": 50,
     "img": ""
   },
@@ -4125,7 +4125,7 @@
     "root_lv": 4,
     "seq": 25,
     "eng": "sixty",
-    "kor": "육십",
+    "kor": "60",
     "num": 60,
     "img": ""
   },
@@ -4135,7 +4135,7 @@
     "root_lv": 4,
     "seq": 26,
     "eng": "seventy",
-    "kor": "칠십",
+    "kor": "70",
     "num": 70,
     "img": ""
   },
@@ -4145,7 +4145,7 @@
     "root_lv": 4,
     "seq": 27,
     "eng": "eighty",
-    "kor": "팔십",
+    "kor": "80",
     "num": 80,
     "img": ""
   },
@@ -4155,7 +4155,7 @@
     "root_lv": 4,
     "seq": 28,
     "eng": "ninety",
-    "kor": "구십",
+    "kor": "90",
     "num": 90,
     "img": ""
   },
@@ -4165,7 +4165,7 @@
     "root_lv": 4,
     "seq": 29,
     "eng": "hundred",
-    "kor": "백",
+    "kor": "100",
     "num": 100,
     "img": ""
   },
@@ -4175,7 +4175,7 @@
     "root_lv": 4,
     "seq": 30,
     "eng": "thousand",
-    "kor": "천",
+    "kor": "1000",
     "num": 1000,
     "img": ""
   },

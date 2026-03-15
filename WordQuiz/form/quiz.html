@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FlashLearn - 퀴즈 진행</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@400;800&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="../style.css">
+  <style>
+    /* 퀴즈 화면 전용 보정 */
+    .app-container {
+      height: 100dvh;
+      justify-content: flex-start;
+      padding-top: 1rem;
+    }
+
+    .screen {
+      display: flex;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app" class="app-container">
+    <!-- 퀴즈 화면 -->
+    <div id="studyScreen" class="screen">
+      <div class="study-nav">
+        <button id="quitBtn" class="danger-btn">종료</button>
+        <div class="timer-container">
+          <div class="timer-text-wrapper">
+            <span id="timerText">10</span><span class="timer-unit">s</span>
+          </div>
+          <div id="timerBar" class="timer-bar"></div>
+        </div>
+        <div class="score-badge">정답 <span id="currentScore">0 / 0</span></div>
+      </div>
+
+      <div class="quiz-container">
+        <div id="questionBox" class="question-box clickable">
+          <div class="speaker-icon">🔊</div>
+          <div id="questionText" class="question-text">Loading...</div>
+        </div>
+
+        <div id="optionsGrid" class="options-grid">
+          <!-- 4개 선택지 -->
+        </div>
+      </div>
+
+      <div id="feedbackOverlay" class="feedback-overlay">
+        <div class="feedback-content">
+          <span id="feedbackIcon"></span>
+          <span id="feedbackMsg"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 결과 화면 (모달 형태로 Quiz 내부에 존재) -->
+    <div id="resultScreen" class="screen"
+      style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-dark); z-index: 200; padding: 1.5rem; overflow-y: auto; align-items: flex-start;">
+      <div class="result-card" style="width: 100%; max-width: 500px; margin: 0 auto; min-height: fit-content;">
+        <h2 style="text-align: center; margin-bottom: 2rem;">📊 퀴즈 결과</h2>
+        <div class="stat-grid" style="margin-bottom: 1rem;">
+          <div class="stat-item">
+            <span class="stat-val" id="finalTotal">0</span>
+            <span class="stat-label">총 문제</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-val success" id="finalCorrect">0</span>
+            <span class="stat-label">정답</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-val danger" id="finalWrong">0</span>
+            <span class="stat-label">오답</span>
+          </div>
+        </div>
+        
+        <div class="stat-grid" style="margin-top: 0; grid-template-columns: repeat(2, 1fr);">
+          <div class="stat-item">
+            <span class="stat-val" id="finalSuccessRate">0%</span>
+            <span class="stat-label">정답률</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-val" id="finalTime">0s</span>
+            <span class="stat-label">소요 시간</span>
+          </div>
+        </div>
+
+        <div id="wrongListContainer" class="wrong-list-box" style="display: none; max-height: 40dvh;">
+          <h3>❌ 이번 세션 오답</h3>
+          <div id="wrongList" class="wrong-list"></div>
+        </div>
+
+        <button onclick="location.href='../index.html'" class="primary-btn" style="margin-top: 2rem;">메인으로</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../app.js"></script>
+  <script>
+    // quiz 전용 로직
+    window.addEventListener('DOMContentLoaded', async () => {
+      await init(); // 1. 로컬 데이터(문제집) 우선 즉시 로딩
+      
+      const filterData = sessionStorage.getItem('quizFilters');
+      if (filterData) {
+        const filters = JSON.parse(filterData);
+        startQuizWithFilters(filters); // 2. 퀴즈 즉시 시작 (지연 없음)
+      }
+
+      fetchGlobalMistakeCounts(); // 3. 오답 카운트는 백그라운드에서 조용히 가져옴
+    });
+
+    function startQuizWithFilters(f) {
+      let filtered = vocabularyData.filter(item => item.root_lv === 4);
+      if (f.l3 !== 'all') {
+        filtered = filtered.filter(i => i.parent_id === f.l3);
+      } else if (f.l2 !== 'all') {
+        const l3Ids = vocabularyData.filter(i => i.parent_id === f.l2).map(i => i.id);
+        filtered = filtered.filter(i => l3Ids.includes(i.parent_id));
+      } else if (f.l1 !== 'all') {
+        const l2Ids = vocabularyData.filter(i => i.parent_id === f.l1).map(i => i.id);
+        const l3Ids = vocabularyData.filter(i => l2Ids.includes(i.parent_id)).map(i => i.id);
+        filtered = filtered.filter(i => l3Ids.includes(i.parent_id));
+      }
+
+      if (filtered.length < 4) {
+        alert('단어가 부족합니다. 범위를 넓혀주세요.');
+        location.href = '../index.html';
+        return;
+      }
+
+      quizList = filtered;
+      unplayedList = []; // Reset unplayed pool for new session
+      stats = { total: 0, correct: 0, wrong: 0, mistakes: [] };
+      startTime = Date.now();
+      isAnswering = false;
+      isQuizActive = true;
+
+      // 스피커 연결
+      document.getElementById('questionBox').onclick = () => {
+        if (currentQuestion) speak(currentQuestion.eng);
+      };
+
+      updateScoreUI();
+      nextQuestion();
+    }
+  </script>
+</body>
+
+</html>

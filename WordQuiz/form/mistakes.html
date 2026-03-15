@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FlashLearn - 오답 노트</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@400;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../style.css">
+  <style>
+    .app-container { 
+      height: 100dvh; 
+      max-height: 100dvh;
+      justify-content: flex-start; 
+      padding: 1rem; 
+      overflow: hidden; 
+      display: flex;
+      flex-direction: column;
+    }
+    .selection-box { 
+      flex: 1; 
+      min-height: 0;
+      overflow: hidden; 
+      display: flex; 
+      flex-direction: column; 
+    }
+    #mistakesSection {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" class="app-container">
+    <header class="hero-header" style="margin-top: 0; margin-bottom: 2rem;">
+      <h1>Error<span>Note</span></h1>
+      <p>틀린 단어들을 복습하고 완벽하게 마스터하세요</p>
+    </header>
+
+    <div class="selection-box" style="flex: 1; min-height: 0; display: flex; flex-direction: column;">
+      <div id="mistakesSection" style="flex: 1; min-height: 0; display: flex; flex-direction: column;">
+        <div class="mistakes-header" style="margin-bottom: 1rem; flex-shrink: 0;">
+          <p>구글 시트의 전체 오답 데이터입니다.</p>
+          <div style="display: flex; gap: 0.5rem;">
+            <button id="refreshMistakes" class="icon-btn" title="새로고침">🔄</button>
+            <button onclick="location.href='../index.html'" class="icon-btn" title="메뉴로">🏠</button>
+          </div>
+        </div>
+        <div id="globalWrongList" class="wrong-list-box global-mistakes" style="flex: 1; min-height: 0; overflow-y: auto;">
+          <div class="empty-msg">데이터를 불러오는 중...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../app.js"></script>
+  <script>
+    window.addEventListener('DOMContentLoaded', async () => {
+      // app.js의 구글 시트 URL을 제대로 읽기 위해 init 생략 후 바로 로드 로직 사용 가능
+      await loadMistakes();
+      document.getElementById('refreshMistakes').onclick = loadMistakes;
+    });
+  </script>
+</body>
+</html>
