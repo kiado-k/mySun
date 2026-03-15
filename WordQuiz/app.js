@@ -48,7 +48,7 @@ function playSound(type) {
 // 🏁 Init
 async function init() {
   try {
-    const response = await fetch('../dt/work_list.json');
+    const response = await fetch('../WordQuiz/dt/work_list.json');
     vocabularyData = await response.json();
     populateFilters();
   } catch (error) {
