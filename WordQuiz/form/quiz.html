@@ -147,6 +147,14 @@
 
       updateScoreUI();
       nextQuestion();
+      
+      // 화면 밖으로 나가거나 탭이 변경되면 퀴즈 강제 종료
+      window.addEventListener('blur', () => {
+        if (isQuizActive) finishQuiz();
+      });
+      window.addEventListener('visibilitychange', () => {
+        if (document.hidden && isQuizActive) finishQuiz();
+      });
     }
   </script>
 </body>
