@@ -319,8 +319,8 @@ select {
   display: flex;
   align-items: center;
   gap: 1.2rem;
-  margin-top: 1rem;
-  margin-bottom: 2rem;
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
 }
 
 .progress-info {
@@ -498,7 +498,7 @@ select {
 .options-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  gap: 0.5rem;
   margin-bottom: 1rem;
 }
 
