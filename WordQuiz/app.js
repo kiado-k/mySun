@@ -86,10 +86,7 @@ function speak(text) {
 // 🏁 Init
 async function init() {
   try {
-    const isSubdir = window.location.pathname.includes('/form/');
-    const path = isSubdir ? '../../dt/work_list.json' : '../dt/work_list.json';
-
-    const response = await fetch(path);
+    const response = await fetch('../WordQuiz/dt/work_list.json');
     vocabularyData = await response.json();
 
     // Page specific setups
