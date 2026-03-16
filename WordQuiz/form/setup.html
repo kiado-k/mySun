@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FlashLearn - 학습 설정</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@400;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+  <div id="app" class="app-container">
+    <header class="hero-header">
+      <h1>Quiz<span>Setup</span></h1>
+      <p>학습할 범위를 선택해 주세요</p>
+    </header>
+    
+    <div class="selection-box">
+      <div id="quizSetupSection">
+        <div class="form-group">
+          <label>대분류 (Level 1)</label>
+          <select id="l1Filter">
+            <option value="all">전체 (All)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>중분류 (Level 2)</label>
+          <select id="l2Filter">
+            <option value="all">전체 (All)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>소분류 (Level 3)</label>
+          <select id="l3Filter">
+            <option value="all">전체 (All)</option>
+          </select>
+        </div>
+
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+          <button onclick="location.href='../index.html'" class="secondary-btn" style="flex: 1;">이전으로</button>
+          <button id="startStudy" class="primary-btn pulse" style="flex: 2;">퀴즈 시작!</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../app.js"></script>
+  <script>
+    window.addEventListener('DOMContentLoaded', async () => {
+      await init();
+      
+      document.getElementById('startStudy').onclick = () => {
+        const filters = {
+          l1: document.getElementById('l1Filter').value,
+          l2: document.getElementById('l2Filter').value,
+          l3: document.getElementById('l3Filter').value
+        };
+        sessionStorage.setItem('quizFilters', JSON.stringify(filters));
+        location.href = 'quiz.html';
+      };
+    });
+  </script>
+</body>
+</html>
