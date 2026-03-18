@@ -3,7 +3,7 @@ let vocabularyData = [];
 // 📥 데이터 로드
 async function init() {
   try {
-    const response = await fetch('../dt/work_list.json');
+    const response = await fetch('../viewer/dt/work_list.json');
     vocabularyData = await response.json();
 
     // 🔥 이미지가 있는 단어만 1차 필터링
