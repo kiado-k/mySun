@@ -10,7 +10,7 @@ async function init() {
     vocabularyData = vocabularyData.filter(item => {
       // L1~L3는 카테고리이므로 유지하되, L4(단어)는 이미지가 있어야 함
       if (item.root_lv === 4) {
-        return item.img && item.img.startsWith('../images/');
+        return item.img && item.img.startsWith('/images/');
       }
       return true;
     });
