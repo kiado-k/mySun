@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>프리미엄 어휘 라이브러리</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Premium Vocabulary Explorer</h1>
+      <p style="color: var(--text-sub);">이미지가 포함된 어휘들을 카테고리별로 정교하게 필터링하여 확인하세요.</p>
+    </header>
+
+    <div class="filter-bar collapsed" id="filterBar">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+        <a href="index.html" style="color: var(--accent-color); text-decoration: none; font-size: 0.95rem; font-weight: bold;">← 이전으로</a>
+        <button class="filter-toggle-btn" style="width: auto;" onclick="toggleFilter()">
+          <span>🔍 필터 (Filter)</span>
+          <span id="toggleIcon" style="margin-left:5px;">▼</span>
+        </button>
+      </div>
+
+      <div id="filterContent">
+        <!-- 대분류 -->
+        <div class="filter-group">
+          <label for="l1_filter">대분류 (Main)</label>
+          <select id="l1_filter">
+            <option value="all">전체 (All)</option>
+          </select>
+        </div>
+
+        <!-- 중분류 -->
+        <div class="filter-group">
+          <label for="l2_filter">중분류 (Mid)</label>
+          <select id="l2_filter">
+            <option value="all">전체 (All)</option>
+          </select>
+        </div>
+
+        <!-- 소분류 -->
+        <div class="filter-group">
+          <label for="l3_filter">소분류 (Small)</label>
+          <select id="l3_filter">
+            <option value="all">전체 (All)</option>
+          </select>
+        </div>
+
+        <!-- 언어 설정 -->
+        <div class="filter-group" style="flex: 0.5;">
+          <label for="lang_filter">검색 기준 (Language)</label>
+          <select id="lang_filter">
+            <option value="eng">영어 (English)</option>
+            <option value="kor">한국어 (Korean)</option>
+          </select>
+        </div>
+
+        <!-- 검색어 입력 -->
+        <div class="filter-group">
+          <label for="searchInput">검색어 (Search)</label>
+          <input type="text" id="searchInput" placeholder="단어를 입력하세요...">
+        </div>
+      </div>
+    </div>
+
+    <script>
+      function toggleFilter() {
+        const bar = document.getElementById('filterBar');
+        const icon = document.getElementById('toggleIcon');
+        bar.classList.toggle('collapsed');
+        icon.textContent = bar.classList.contains('collapsed') ? '▼' : '▲';
+      }
+
+      // 🚀 TOP 버튼 로직
+      window.onscroll = function() {
+        const topBtn = document.getElementById('topBtn');
+        if (document.body.scrollTop > 300 || document.documentElement.scrollTop > 300) {
+          topBtn.classList.add('visible');
+        } else {
+          topBtn.classList.remove('visible');
+        }
+      };
+
+      function scrollToTop() {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    </script>
+
+    <div id="gridContainer" class="vocabulary-grid">
+      <!-- 동적으로 카드 삽입됨 -->
+      <div style="grid-column: 1 / -1; padding: 4rem; text-align: center;">어휘를 불러오는 중...</div>
+    </div>
+
+    <!-- 🚀 Floating TOP Button -->
+    <button id="topBtn" class="top-btn" onclick="scrollToTop()">TOP</button>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
