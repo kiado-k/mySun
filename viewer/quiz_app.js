@@ -56,7 +56,7 @@ function speak(text, lang = 'en-US') {
 // 🏁 Initialize
 async function init() {
   try {
-    const response = await fetch('../dt/work_list.json');
+    const response = await fetch('../viewer/dt/work_list.json');
     vocabularyData = await response.json();
 
     // 🔥 Filter items that have images
